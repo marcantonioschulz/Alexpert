@@ -22,6 +22,9 @@ export async function scoreRoutes(app: FastifyInstance) {
             conversationId: z.string(),
             score: z.number(),
             feedback: z.string()
+          }),
+          500: z.object({
+            message: z.string()
           })
         }
       }

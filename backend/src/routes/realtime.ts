@@ -15,7 +15,8 @@ export async function realtimeRoutes(app: FastifyInstance) {
           token: z.string().optional()
         }),
         response: {
-          200: z.object({ sdp: z.string() })
+          200: z.object({ sdp: z.string() }),
+          500: z.object({ message: z.string() })
         }
       }
     },
