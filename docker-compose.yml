@@ -1,0 +1,46 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: sales-simulation-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: sales_simulation
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+    container_name: sales-simulation-backend
+    depends_on:
+      - db
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/sales_simulation
+      API_KEY: ${API_KEY:-super-secret-key}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-replace-me}
+      REALTIME_MODEL: ${REALTIME_MODEL:-gpt-4o-realtime-preview}
+      RESPONSES_MODEL: ${RESPONSES_MODEL:-gpt-4o-mini}
+    ports:
+      - '4000:4000'
+    command: sh -c "npx prisma migrate deploy && node dist/server.js"
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: sales-simulation-frontend
+    depends_on:
+      - backend
+    environment:
+      VITE_API_KEY: ${API_KEY:-super-secret-key}
+    ports:
+      - '3000:3000'
+    command: npm run dev -- --host 0.0.0.0 --port 3000
+
+volumes:
+  postgres_data:
