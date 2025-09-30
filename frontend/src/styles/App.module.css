@@ -1,0 +1,162 @@
+.page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.header h1 {
+  margin: 0 0 0.5rem;
+  font-size: 2rem;
+}
+
+.header p {
+  margin: 0;
+  color: #334155;
+}
+
+.badge {
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background-color: #e2e8f0;
+  color: #0f172a;
+}
+
+.badgeLive {
+  background-color: #bbf7d0;
+  color: #166534;
+}
+
+.badgeStarting {
+  background-color: #fef9c3;
+  color: #854d0e;
+}
+
+.badgeEnded {
+  background-color: #e2e8f0;
+}
+
+.badgeError {
+  background-color: #fecdd3;
+  color: #9f1239;
+}
+
+.main {
+  display: grid;
+  gap: 1.5rem;
+}
+
+@media (min-width: 900px) {
+  .main {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .main > :last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+.card {
+  background-color: #ffffff;
+  border-radius: 1rem;
+  box-shadow: 0 15px 35px -20px rgba(15, 23, 42, 0.35);
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.card h2 {
+  margin: 0;
+}
+
+.card p {
+  margin: 0;
+  color: #475569;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.actions button {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  border: none;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.actions button:not(:disabled):hover {
+  opacity: 0.85;
+}
+
+.meta {
+  font-size: 0.875rem;
+  color: #0f172a;
+}
+
+.error {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.audio {
+  width: 100%;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 120px;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid #cbd5f5;
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+
+.transcript {
+  background: #f1f5f9;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  max-height: 280px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  font-size: 0.9rem;
+}
+
+.scorePanel {
+  background: #eff6ff;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.scoreValue {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #1d4ed8;
+}
