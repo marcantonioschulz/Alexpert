@@ -18,6 +18,9 @@ export async function tokenRoutes(app: FastifyInstance) {
           200: z.object({
             token: z.string(),
             expires_in: z.number()
+          }),
+          500: z.object({
+            message: z.string()
           })
         }
       }
