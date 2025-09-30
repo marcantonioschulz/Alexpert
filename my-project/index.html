@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>my-project</title>
+  </head>
+  <body>
+    <div id="app">
+      <!-- Access Control Section -->
+      <section id="access-section" class="access-container">
+        <div class="access-panel">
+          <h1 class="access-title">Alex Coach</h1>
+          <p class="access-subtitle">Ihr persönlicher Life Coach</p>
+          <div class="access-input-group">
+            <input 
+              type="text" 
+              id="access-input" 
+              class="access-input" 
+              placeholder="Codewort eingeben..."
+              autocomplete="off"
+            />
+            <button id="access-button" class="access-button">
+              Starten
+            </button>
+          </div>
+          <div class="access-hint">
+            Geben Sie das Codewort ein, um zu beginnen
+          </div>
+        </div>
+      </section>
+
+      <!-- Alex Coach Interface -->
+      <section id="coach-section" class="coach-container" style="display: none;">
+        <div class="coach-header">
+          <h1>Alex Coach</h1>
+          <div id="voice-status" class="voice-status">Initialisierung...</div>
+        </div>
+        
+        <div class="coach-main">
+          <button id="voice-button" class="voice-button" disabled>
+            🎙️ Sprechen
+          </button>
+          <p class="voice-instruction">
+            Klicken und halten um zu sprechen
+          </p>
+        </div>
+        
+        <div id="session-info" class="session-info">
+          <!-- Session statistics will be populated here -->
+        </div>
+      </section>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
