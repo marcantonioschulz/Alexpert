@@ -1,6 +1,7 @@
-import type { Conversation } from '@prisma/client';
+import type { Conversation, ConversationLog } from '@prisma/client';
 
 export type ConversationResponse = Conversation;
+export type ConversationLogResponse = ConversationLog;
 
 export type ConversationDto = {
   id: string;
@@ -10,8 +11,12 @@ export type ConversationDto = {
   createdAt: string;
 };
 
-export type ErrorResponse = {
-  code: string;
-  message: string;
-  context?: Record<string, unknown>;
+export type ConversationLogDto = {
+  id: string;
+  conversationId: string;
+  role: string;
+  type: ConversationLog['type'];
+  content: string;
+  context: unknown | null;
+  createdAt: string;
 };

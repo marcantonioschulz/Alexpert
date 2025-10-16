@@ -1,9 +1,15 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
+import { ConversationLogType } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
-import type { ConversationDto, ConversationResponse, ErrorResponse } from '../types/index.js';
-import { errorResponseSchema, sendErrorResponse } from './error-response.js';
+import { env } from '../lib/env.js';
+import type {
+  ConversationDto,
+  ConversationLogDto,
+  ConversationLogResponse,
+  ConversationResponse
+} from '../types/index.js';
 
 export async function conversationRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
@@ -66,10 +72,23 @@ export async function conversationRoutes(app: FastifyInstance) {
       }
     },
     async (request, reply) => {
-      try {
-        const conversation = await prisma.conversation.findUnique({
-          where: { id: request.params.id }
+      const conversation = await prisma.$transaction(async (tx) => {
+        const updatedConversation = await tx.conversation.update({
+          where: { id: request.params.id },
+          data: { transcript: request.body.transcript }
         });
+
+        await tx.conversationLog.create({
+          data: {
+            conversationId: updatedConversation.id,
+            role: 'user',
+            type: ConversationLogType.TRANSCRIPT,
+            content: request.body.transcript
+          }
+        });
+
+        return updatedConversation;
+      });
 
         if (!conversation) {
           return sendErrorResponse(
@@ -97,6 +116,44 @@ export async function conversationRoutes(app: FastifyInstance) {
           conversationId: request.params.id
         });
       }
+    }
+  );
+
+  app.withTypeProvider<ZodTypeProvider>().get(
+    '/api/conversation/:id/logs',
+    {
+      schema: {
+        params: z.object({ id: z.string() }),
+        querystring: z.object({
+          type: z.nativeEnum(ConversationLogType).optional()
+        }),
+        response: {
+          200: z.object({
+            logs: z.array(
+              z.object({
+                id: z.string(),
+                conversationId: z.string(),
+                role: z.string(),
+                type: z.nativeEnum(ConversationLogType),
+                content: z.string(),
+                context: z.unknown().nullable(),
+                createdAt: z.string()
+              })
+            )
+          })
+        }
+      }
+    },
+    async (request, reply) => {
+      const logs = await prisma.conversationLog.findMany({
+        where: {
+          conversationId: request.params.id,
+          ...(request.query.type ? { type: request.query.type } : {})
+        },
+        orderBy: { createdAt: 'asc' }
+      });
+
+      return reply.send({ logs: logs.map(formatConversationLog) });
     }
   );
 
@@ -152,5 +209,13 @@ function formatConversation(conversation: ConversationResponse): ConversationDto
   return {
     ...conversation,
     createdAt: conversation.createdAt.toISOString()
+  };
+}
+
+function formatConversationLog(log: ConversationLogResponse): ConversationLogDto {
+  return {
+    ...log,
+    context: log.context ?? null,
+    createdAt: log.createdAt.toISOString()
   };
 }
