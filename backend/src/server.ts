@@ -31,6 +31,25 @@ const buildServer = () => {
   app.register(cors, { origin: originConfig });
   app.register(sensible);
 
+  app.setErrorHandler((error, request, reply) => {
+    request.log.error(error, 'Unhandled error');
+
+    const statusCode = error.statusCode ?? 500;
+    const isProd = env.APP_ENV === 'prod';
+    const showOriginalMessage = statusCode < 500 || !isProd;
+    const message = showOriginalMessage ? error.message : 'Internal server error';
+
+    const response: Record<string, unknown> = {
+      error: message
+    };
+
+    if (!isProd && error.stack) {
+      response.stack = error.stack;
+    }
+
+    reply.status(statusCode).send(response);
+  });
+
   app.addHook('onRequest', async (request, reply) => {
     if (!request.url.startsWith('/api')) {
       return;
