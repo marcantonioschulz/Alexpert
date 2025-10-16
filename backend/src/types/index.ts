@@ -1,4 +1,5 @@
-import type { Conversation, ConversationLog } from '@prisma/client';
+import type { Conversation } from '@prisma/client';
+import type { UserPreference } from '@prisma/client';
 
 export type ConversationResponse = Conversation;
 export type ConversationLogResponse = ConversationLog;
@@ -11,23 +12,4 @@ export type ConversationDto = {
   createdAt: string;
 };
 
-export type AnalyticsSummary = {
-  totalConversations: number;
-  scoredConversations: number;
-  averageScore: number | null;
-  lastConversationAt: string | null;
-  lastSevenDays: number;
-  bestScore: { conversationId: string; score: number } | null;
-  lowestScore: { conversationId: string; score: number } | null;
-};
-
-export type AnalyticsDailyTrend = {
-  date: string;
-  conversations: number;
-  averageScore: number | null;
-};
-
-export type ScoreDistributionBucket = {
-  range: string;
-  count: number;
-};
+export type UserPreferenceResponse = UserPreference;

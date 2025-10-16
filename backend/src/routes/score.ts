@@ -6,8 +6,10 @@ import fetch from 'node-fetch';
 import { ConversationLogType } from '@prisma/client';
 import { env } from '../lib/env.js';
 import { prisma } from '../lib/prisma.js';
-import { ServiceError } from '../services/errors.js';
-import { scoreConversation } from '../services/scoreService.js';
+import { getUserPreferences, resolveOpenAIKey } from '../lib/preferences.js';
+
+const systemPrompt = `Bewerte dieses Verkaufsgespräch nach Klarheit, Bedarfsermittlung, Einwandbehandlung.
+Antworte ausschließlich als JSON im Format {"score": number, "feedback": string}.`;
 
 export async function scoreRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
@@ -17,7 +19,7 @@ export async function scoreRoutes(app: FastifyInstance) {
         body: z.object({
           conversationId: z.string().optional(),
           transcript: z.string().optional(),
-          stream: z.boolean().optional()
+          userId: z.string().optional()
         }),
         response: {
           200: z.object({
@@ -32,18 +34,15 @@ export async function scoreRoutes(app: FastifyInstance) {
       }
     },
     async (request, reply) => {
-      try {
-        const result = await scoreConversation(
-          {
-            prisma,
-            fetch: fetch as unknown as typeof globalThis.fetch,
-            env: {
-              OPENAI_API_KEY: env.OPENAI_API_KEY,
-              RESPONSES_MODEL: env.RESPONSES_MODEL
-            }
-          },
-          request.body
-        );
+      const { conversationId, transcript: transcriptFromBody } = request.body;
+      const userId = request.body.userId ?? 'demo-user';
+      const preferences = await getUserPreferences(userId);
+      const apiKey = resolveOpenAIKey(preferences);
+      const model = preferences.responsesModel ?? env.RESPONSES_MODEL;
+
+      if (!conversationId && !transcriptFromBody) {
+        return reply.badRequest('conversationId oder transcript erforderlich');
+      }
 
         return reply.send(result);
       } catch (error) {
@@ -87,13 +86,42 @@ function parseScorePayload(
   return null;
 }
 
-function extractTextFromSSE(streamContent: string): string {
-  if (!streamContent) {
-    return '';
-  }
+      const response = await fetch('https://api.openai.com/v1/responses', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model,
+          input: [
+            {
+              role: 'system',
+              content: [
+                {
+                  type: 'text',
+                  text: systemPrompt
+                }
+              ]
+            },
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: transcript
+                }
+              ]
+            }
+          ]
+        })
+      });
 
-  const lines = streamContent.split(/\r?\n/);
-  let aggregated = '';
+      if (!response.ok) {
+        const errorText = await response.text();
+        request.log.error({ errorText }, 'Failed to fetch score from OpenAI');
+        return reply.status(500).send({ message: 'Score request failed' });
+      }
 
   for (const line of lines) {
     if (!line.startsWith('data:')) {
@@ -127,38 +155,21 @@ function extractTextFromSSE(streamContent: string): string {
   return aggregated;
 }
 
-function boundScore(score: number): number {
-  return Math.min(100, Math.max(0, Math.round(score)));
-}
+      const boundedScore = Math.min(100, Math.max(0, Math.round(parsed.score)));
 
-function createCacheKey(model: string, prompt: string, transcript: string): string {
-  return crypto.createHash('sha256').update(model).update('\0').update(prompt).update('\0').update(transcript).digest('hex');
-}
-
-async function getCachedScore(
-  key: string,
-  logger: FastifyBaseLogger
-): Promise<{ score: number; feedback: string } | null> {
-  try {
-    const cached = await cacheClient.get(key);
-    return cached ? (JSON.parse(cached) as { score: number; feedback: string }) : null;
-  } catch (error) {
-    logger.warn({ error }, 'Failed to retrieve cached score');
-    return null;
-  }
-}
-
-async function setCachedScore(
-  key: string,
-  value: { score: number; feedback: string },
-  logger: FastifyBaseLogger
-): Promise<void> {
-  try {
-    await cacheClient.set(key, JSON.stringify(value));
-  } catch (error) {
-    logger.warn({ error }, 'Failed to store score cache');
-  }
-}
+      const updatedConversation = conversationId
+        ? await prisma.conversation.update({
+            where: { id: conversationId },
+            data: { score: boundedScore, feedback: parsed.feedback }
+          })
+        : await prisma.conversation.create({
+            data: {
+              userId,
+              transcript,
+              score: boundedScore,
+              feedback: parsed.feedback
+            }
+          });
 
 async function persistConversation({
   existingConversationId,

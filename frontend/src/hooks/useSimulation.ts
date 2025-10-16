@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { API_HEADERS } from '../utils/api';
+import type { UserPreferences } from '../types/preferences';
 
 type SimulationStatus = 'idle' | 'starting' | 'live' | 'ended' | 'error';
 type SpeakerState = 'idle' | 'ai' | 'user';
@@ -19,6 +19,16 @@ type ConversationPayload = {
   createdAt: string;
 };
 
+const API_HEADERS = import.meta.env.VITE_API_KEY
+  ? { 'x-api-key': import.meta.env.VITE_API_KEY as string }
+  : undefined;
+
+type SimulationOptions = {
+  userId: string;
+  preferences: Pick<UserPreferences, 'realtimeModel' | 'responsesModel' | 'apiKeyOverride'>;
+};
+
+export const useSimulation = (options: SimulationOptions | null) => {
 export const useSimulation = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
@@ -61,6 +71,11 @@ export const useSimulation = () => {
   }, [updateSpeakerState]);
 
   const startSimulation = useCallback(async () => {
+    if (!options) {
+      setError('Einstellungen wurden noch nicht geladen.');
+      return;
+    }
+
     try {
       setError(null);
       setStatus('starting');
@@ -74,8 +89,10 @@ export const useSimulation = () => {
       const startResponse = await fetch('/api/start', {
         method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           ...(API_HEADERS ?? {})
-        }
+        },
+        body: JSON.stringify({ userId: options.userId })
       });
 
       if (!startResponse.ok) {
@@ -91,8 +108,13 @@ export const useSimulation = () => {
       const tokenResponse = await fetch('/api/token', {
         method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           ...(API_HEADERS ?? {})
-        }
+        },
+        body: JSON.stringify({
+          model: options.preferences.realtimeModel,
+          userId: options.userId
+        })
       });
 
       if (!tokenResponse.ok) {
@@ -144,7 +166,9 @@ export const useSimulation = () => {
         body: JSON.stringify({
           token,
           sdp: offer.sdp,
-          conversationId: startPayload.conversationId
+          conversationId: startPayload.conversationId,
+          model: options.preferences.realtimeModel,
+          userId: options.userId
         })
       });
 
@@ -162,7 +186,7 @@ export const useSimulation = () => {
       setStatus('error');
       cleanupMedia();
     }
-  }, [attachRemoteTrackListeners, cleanupMedia, handleVadMessage, updateSpeakerState]);
+  }, [cleanupMedia, options]);
 
   const endSimulation = useCallback(async () => {
     cleanupMedia();
@@ -220,29 +244,30 @@ export const useSimulation = () => {
       return;
     }
 
-    try {
-      setScorePhase('loading');
-      const response = await fetch('/api/score', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(API_HEADERS ?? {})
-        },
-        body: JSON.stringify({ conversationId })
-      });
+    if (!options) {
+      setError('Einstellungen wurden noch nicht geladen.');
+      return;
+    }
 
-      if (!response.ok) {
-        throw new Error('Score konnte nicht berechnet werden.');
-      }
+    const response = await fetch('/api/score', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(API_HEADERS ?? {})
+      },
+      body: JSON.stringify({
+        conversationId,
+        userId: options.userId
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Score konnte nicht berechnet werden.');
+    }
 
     const payload = (await response.json()) as ScoreResponse & { conversationId: string };
     setScore({ score: payload.score, feedback: payload.feedback });
-    setConversationDetails((previous) =>
-      previous && previous.id === payload.conversationId
-        ? { ...previous, score: payload.score, feedback: payload.feedback }
-        : previous
-    );
-  }, [conversationId]);
+  }, [conversationId, options]);
 
   return {
     audioRef,

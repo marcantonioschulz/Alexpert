@@ -3,7 +3,7 @@ import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import fetch from 'node-fetch';
 import { env } from '../lib/env.js';
-import { errorResponseSchema, sendErrorResponse } from './error-response.js';
+import { getUserPreferences, resolveOpenAIKey } from '../lib/preferences.js';
 
 export async function realtimeRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
@@ -13,7 +13,9 @@ export async function realtimeRoutes(app: FastifyInstance) {
         body: z.object({
           sdp: z.string(),
           conversationId: z.string(),
-          token: z.string().optional()
+          token: z.string().optional(),
+          model: z.string().optional(),
+          userId: z.string().optional()
         }),
         response: {
           200: z.object({ sdp: z.string() }),
@@ -22,18 +24,20 @@ export async function realtimeRoutes(app: FastifyInstance) {
       }
     },
     async (request, reply) => {
-      try {
-        const bearerToken = request.body.token ?? env.OPENAI_API_KEY;
+      const userId = request.body.userId ?? 'demo-user';
+      const preferences = await getUserPreferences(userId);
+      const model = request.body.model ?? preferences.realtimeModel ?? env.REALTIME_MODEL;
+      const bearerToken = request.body.token ?? resolveOpenAIKey(preferences);
 
-        const response = await fetch(`https://api.openai.com/v1/realtime?model=${env.REALTIME_MODEL}`, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${bearerToken}`,
-            'Content-Type': 'application/sdp',
-            'OpenAI-Beta': 'realtime=v1'
-          },
-          body: request.body.sdp
-        });
+      const response = await fetch(`https://api.openai.com/v1/realtime?model=${model}`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${bearerToken}`,
+          'Content-Type': 'application/sdp',
+          'OpenAI-Beta': 'realtime=v1'
+        },
+        body: request.body.sdp
+      });
 
         if (!response.ok) {
           const errorText = await response.text();

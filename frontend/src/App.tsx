@@ -1,5 +1,7 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useSimulation } from './hooks/useSimulation';
+import { useUserPreferences } from './hooks/useUserPreferences';
+import { Settings } from './components/Settings';
 import styles from './styles/App.module.css';
 import { AnalyticsDashboard } from './features/analytics/AnalyticsDashboard';
 import { downloadMarkdownReport, downloadPdfReport } from './features/export/reportUtils';
@@ -90,6 +92,68 @@ function SpeakerIndicator({ speakerState }: { speakerState: SpeakerState }) {
 }
 
 function App() {
+  const userId = 'demo-user';
+  const {
+    preferences,
+    updatePreference,
+    savePreferences,
+    isLoading: isPreferencesLoading,
+    isSaving: isPreferencesSaving,
+    error: preferencesError,
+    hasChanges: preferencesChanged
+  } = useUserPreferences(userId);
+
+  useEffect(() => {
+    if (!preferences) {
+      return;
+    }
+
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return;
+    }
+
+    const root = document.documentElement;
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+    const applyTheme = () => {
+      const targetTheme =
+        preferences.theme === 'system'
+          ? mediaQuery.matches
+            ? 'dark'
+            : 'light'
+          : preferences.theme;
+      root.dataset.theme = targetTheme;
+    };
+
+    applyTheme();
+
+    if (preferences.theme === 'system') {
+      mediaQuery.addEventListener('change', applyTheme);
+      return () => {
+        mediaQuery.removeEventListener('change', applyTheme);
+      };
+    }
+
+    return () => {
+      mediaQuery.removeEventListener('change', applyTheme);
+    };
+  }, [preferences]);
+
+  const simulationOptions = useMemo(() => {
+    if (!preferences) {
+      return null;
+    }
+
+    return {
+      userId: preferences.userId,
+      preferences: {
+        realtimeModel: preferences.realtimeModel,
+        responsesModel: preferences.responsesModel,
+        apiKeyOverride: preferences.apiKeyOverride
+      }
+    } as const;
+  }, [preferences]);
+
   const {
     audioRef,
     conversationId,
@@ -108,9 +172,10 @@ function App() {
     transcriptPhase,
     transcriptDraft,
     setTranscriptDraft
-  } = useSimulation();
+  } = useSimulation(simulationOptions);
 
-  const canStart = status === 'idle' || status === 'ended' || status === 'error';
+  const canStart =
+    !isPreferencesLoading && !!preferences && (status === 'idle' || status === 'ended' || status === 'error');
   const canStop = status === 'live';
 
   const sharedReportData = conversationId && score
@@ -150,6 +215,16 @@ function App() {
       </header>
 
       <main className={styles.main}>
+        <Settings
+          className={`${styles.card} ${styles.settingsCard}`}
+          preferences={preferences}
+          isLoading={isPreferencesLoading}
+          isSaving={isPreferencesSaving}
+          hasChanges={preferencesChanged}
+          error={preferencesError}
+          onChange={updatePreference}
+          onSave={savePreferences}
+        />
         <section className={styles.card}>
           <h2>Simulation steuern</h2>
           <p>Starte die Simulation und sprich mit der KI über dein Angebot.</p>
