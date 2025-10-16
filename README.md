@@ -74,6 +74,10 @@ DATABASE_URL=postgresql://prod_user:secret@prod-db:5432/sales_simulation
 
 Starte eine Umgebung, indem du die gewünschte Datei in `.env` kopierst (oder entsprechende Variablen im Deployment setzt) und anschließend `docker compose up -d` ausführst. Die Services lesen alle Werte zur Laufzeit ein – ein Austausch der `.env` genügt.
 
+### Datenbankmigrationen
+
+Für lokale Entwicklungen erzeugst du neue Migrationen mit `npx prisma migrate dev --name <beschreibung>` direkt im Ordner [`backend/`](./backend). In produktiven Setups muss vor jedem Release `npx prisma migrate deploy` ausgeführt werden, damit alle ausstehenden Migrationen gegen die Datenbank laufen. Unser [`docker-compose.yml`](./docker-compose.yml) erledigt diesen Schritt beim Containerstart automatisch; übertrage denselben Befehl in deine CI/CD-Pipeline bzw. das verwendete Deployment-Skript.
+
 ### Reverse-Proxy-Automatisierung
 
 Mit [`scripts/setup-proxy.sh`](./scripts/setup-proxy.sh) kannst du den Nginx Proxy Manager API-gesteuert konfigurieren:
