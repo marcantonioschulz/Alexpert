@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import fetch from 'node-fetch';
+import { ConversationLogType } from '@prisma/client';
 import { env } from '../lib/env.js';
 import { prisma } from '../lib/prisma.js';
 
@@ -120,19 +121,60 @@ export async function scoreRoutes(app: FastifyInstance) {
 
       const boundedScore = Math.min(100, Math.max(0, Math.round(parsed.score)));
 
-      const updatedConversation = conversationId
-        ? await prisma.conversation.update({
-            where: { id: conversationId },
-            data: { score: boundedScore, feedback: parsed.feedback }
-          })
-        : await prisma.conversation.create({
+      const updatedConversation = await prisma.$transaction(async (tx) => {
+        const nextConversation = conversationId
+          ? await tx.conversation.update({
+              where: { id: conversationId },
+              data: { transcript, score: boundedScore, feedback: parsed.feedback }
+            })
+          : await tx.conversation.create({
+              data: {
+                userId: 'demo-user',
+                transcript,
+                score: boundedScore,
+                feedback: parsed.feedback
+              }
+            });
+
+        if (transcriptFromBody) {
+          await tx.conversationLog.create({
             data: {
-              userId: 'demo-user',
-              transcript,
-              score: boundedScore,
-              feedback: parsed.feedback
+              conversationId: nextConversation.id,
+              role: 'user',
+              type: ConversationLogType.TRANSCRIPT,
+              content: transcriptFromBody
             }
           });
+        }
+
+        await tx.conversationLog.create({
+          data: {
+            conversationId: nextConversation.id,
+            role: 'system',
+            type: ConversationLogType.SCORING_CONTEXT,
+            content: 'Score evaluation requested',
+            context: {
+              score: boundedScore,
+              transcriptLength: transcript.length,
+              prompt: systemPrompt
+            }
+          }
+        });
+
+        await tx.conversationLog.create({
+          data: {
+            conversationId: nextConversation.id,
+            role: 'assistant',
+            type: ConversationLogType.AI_FEEDBACK,
+            content: parsed.feedback,
+            context: {
+              score: boundedScore
+            }
+          }
+        });
+
+        return nextConversation;
+      });
 
       return reply.send({
         conversationId: updatedConversation.id,
