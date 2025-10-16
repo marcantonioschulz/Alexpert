@@ -9,3 +9,9 @@ export type ConversationDto = {
   feedback: string | null;
   createdAt: string;
 };
+
+export type ErrorResponse = {
+  code: string;
+  message: string;
+  context?: Record<string, unknown>;
+};

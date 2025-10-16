@@ -2,8 +2,13 @@ import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
-import { env } from '../lib/env.js';
-import type { ConversationDto, ConversationResponse } from '../types/index.js';
+import type { ConversationDto, ConversationResponse, ErrorResponse } from '../types/index.js';
+
+const errorResponseSchema = z.object({
+  code: z.string(),
+  message: z.string(),
+  context: z.record(z.any()).optional()
+});
 
 export async function conversationRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
@@ -18,7 +23,7 @@ export async function conversationRoutes(app: FastifyInstance) {
           .nullable(),
         response: {
           200: z.object({ conversationId: z.string() }),
-          500: z.object({ error: z.string() })
+          500: errorResponseSchema satisfies z.ZodType<ErrorResponse>
         }
       }
     },
@@ -32,13 +37,8 @@ export async function conversationRoutes(app: FastifyInstance) {
 
         return reply.send({ conversationId: conversation.id });
       } catch (error) {
-        request.log.error(error, 'Failed to create conversation');
-
-        const isProd = env.APP_ENV === 'prod';
-        const message =
-          error instanceof Error ? error.message : 'Unknown error while creating conversation';
-
-        return reply.code(500).send({ error: isProd ? 'Internal server error' : message });
+        request.log.error({ err: error }, 'Failed to create conversation');
+        throw error;
       }
     }
   );
