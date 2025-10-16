@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
-import type { ConversationDto, ConversationResponse } from '../types/index.js';
+import type { ConversationDto, ConversationResponse, ErrorResponse } from '../types/index.js';
 import { errorResponseSchema, sendErrorResponse } from './error-response.js';
 
 export async function conversationRoutes(app: FastifyInstance) {
@@ -18,7 +18,7 @@ export async function conversationRoutes(app: FastifyInstance) {
           .nullable(),
         response: {
           200: z.object({ conversationId: z.string() }),
-          500: errorResponseSchema
+          500: errorResponseSchema satisfies z.ZodType<ErrorResponse>
         }
       }
     },
