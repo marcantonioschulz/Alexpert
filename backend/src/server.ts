@@ -17,7 +17,18 @@ const buildServer = () => {
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
 
-  app.register(cors, { origin: true });
+  const configuredOrigins = env.CORS_ORIGIN
+    ? env.CORS_ORIGIN.split(',').map((origin) => origin.trim()).filter(Boolean)
+    : [];
+  const fallbackOrigins = env.APP_ENV === 'prod' ? [] : ['*'];
+  const origins = configuredOrigins.length > 0 ? configuredOrigins : fallbackOrigins;
+  const originConfig = origins.length === 0 ? false : origins.includes('*') ? true : origins;
+
+  if (env.APP_ENV === 'prod' && origins.length === 0) {
+    app.log.warn('CORS origin list is empty in production. Set CORS_ORIGIN to enable client access.');
+  }
+
+  app.register(cors, { origin: originConfig });
   app.register(sensible);
 
   app.addHook('onRequest', async (request, reply) => {

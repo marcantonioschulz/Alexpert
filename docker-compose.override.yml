@@ -2,6 +2,8 @@ services:
   backend:
     environment:
       NODE_ENV: development
+      APP_ENV: ${APP_ENV:-dev}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
     command: npm run dev
     volumes:
       - ./backend:/app
@@ -9,6 +11,11 @@ services:
   frontend:
     environment:
       NODE_ENV: development
+      APP_ENV: ${APP_ENV:-dev}
+      VITE_HOST: ${VITE_HOST:-0.0.0.0}
+      VITE_PORT: ${VITE_PORT:-3000}
+      VITE_ALLOWED_HOSTS: ${VITE_ALLOWED_HOSTS:-localhost}
+      VITE_BACKEND_URL: ${VITE_BACKEND_URL:-http://backend:4000}
     command: npm run dev -- --host 0.0.0.0 --port 3000
     volumes:
       - ./frontend:/app
