@@ -8,6 +8,7 @@ import { conversationRoutes } from './routes/conversation.js';
 import { tokenRoutes } from './routes/token.js';
 import { realtimeRoutes } from './routes/realtime.js';
 import { scoreRoutes } from './routes/score.js';
+import { preferencesRoutes } from './routes/preferences.js';
 
 const buildServer = () => {
   const app = Fastify({
@@ -69,6 +70,7 @@ const buildServer = () => {
   app.register(tokenRoutes);
   app.register(realtimeRoutes);
   app.register(scoreRoutes);
+  app.register(preferencesRoutes);
 
   return app;
 };

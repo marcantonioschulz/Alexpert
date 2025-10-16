@@ -4,6 +4,7 @@ import { z } from 'zod';
 import fetch from 'node-fetch';
 import { env } from '../lib/env.js';
 import { prisma } from '../lib/prisma.js';
+import { getUserPreferences, resolveOpenAIKey } from '../lib/preferences.js';
 
 const systemPrompt = `Bewerte dieses Verkaufsgespräch nach Klarheit, Bedarfsermittlung, Einwandbehandlung.
 Antworte ausschließlich als JSON im Format {"score": number, "feedback": string}.`;
@@ -15,7 +16,8 @@ export async function scoreRoutes(app: FastifyInstance) {
       schema: {
         body: z.object({
           conversationId: z.string().optional(),
-          transcript: z.string().optional()
+          transcript: z.string().optional(),
+          userId: z.string().optional()
         }),
         response: {
           200: z.object({
@@ -31,6 +33,10 @@ export async function scoreRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       const { conversationId, transcript: transcriptFromBody } = request.body;
+      const userId = request.body.userId ?? 'demo-user';
+      const preferences = await getUserPreferences(userId);
+      const apiKey = resolveOpenAIKey(preferences);
+      const model = preferences.responsesModel ?? env.RESPONSES_MODEL;
 
       if (!conversationId && !transcriptFromBody) {
         return reply.badRequest('conversationId oder transcript erforderlich');
@@ -53,11 +59,11 @@ export async function scoreRoutes(app: FastifyInstance) {
       const response = await fetch('https://api.openai.com/v1/responses', {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${env.OPENAI_API_KEY}`,
+          Authorization: `Bearer ${apiKey}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: env.RESPONSES_MODEL,
+          model,
           input: [
             {
               role: 'system',
@@ -127,7 +133,7 @@ export async function scoreRoutes(app: FastifyInstance) {
           })
         : await prisma.conversation.create({
             data: {
-              userId: 'demo-user',
+              userId,
               transcript,
               score: boundedScore,
               feedback: parsed.feedback

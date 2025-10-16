@@ -15,3 +15,14 @@ model Conversation {
   feedback   String?
   createdAt  DateTime @default(now())
 }
+
+model UserPreference {
+  id             Int      @id @default(autoincrement())
+  userId         String   @unique
+  realtimeModel  String?  @default("gpt-4o-realtime-preview")
+  responsesModel String?  @default("gpt-4o-mini")
+  apiKeyOverride String?
+  theme          String   @default("system")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
