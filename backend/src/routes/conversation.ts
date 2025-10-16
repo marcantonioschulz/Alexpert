@@ -16,7 +16,8 @@ export async function conversationRoutes(app: FastifyInstance) {
           })
           .optional(),
         response: {
-          200: z.object({ conversationId: z.string() })
+          200: z.object({ conversationId: z.string() }),
+          500: z.object({ error: z.string() })
         }
       }
     },
