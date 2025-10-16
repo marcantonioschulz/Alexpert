@@ -10,7 +10,7 @@ import { realtimeRoutes } from './routes/realtime.js';
 import { scoreRoutes } from './routes/score.js';
 import { cacheClient } from './services/cache.js';
 
-const buildServer = () => {
+export const buildServer = () => {
   const app = Fastify({
     logger: true
   });
