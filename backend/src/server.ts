@@ -8,7 +8,7 @@ import { conversationRoutes } from './routes/conversation.js';
 import { tokenRoutes } from './routes/token.js';
 import { realtimeRoutes } from './routes/realtime.js';
 import { scoreRoutes } from './routes/score.js';
-import type { ErrorResponse } from './types/index.js';
+import { cacheClient } from './services/cache.js';
 
 const buildServer = () => {
   const app = Fastify({
@@ -91,6 +91,7 @@ const buildServer = () => {
 
   app.addHook('onClose', async () => {
     await prisma.$disconnect();
+    await cacheClient.disconnect();
   });
 
   app.register(conversationRoutes);
