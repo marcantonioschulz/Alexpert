@@ -21,9 +21,7 @@ export async function tokenRoutes(app: FastifyInstance) {
             token: z.string(),
             expires_in: z.number()
           }),
-          500: z.object({
-            message: z.string()
-          })
+          500: errorResponseSchema
         }
       }
     },

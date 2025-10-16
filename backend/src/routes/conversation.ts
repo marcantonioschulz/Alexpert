@@ -23,7 +23,7 @@ export async function conversationRoutes(app: FastifyInstance) {
           .nullable(),
         response: {
           200: z.object({ conversationId: z.string() }),
-          500: z.object({ error: z.string() })
+          500: errorResponseSchema satisfies z.ZodType<ErrorResponse>
         }
       }
     },
@@ -31,14 +31,13 @@ export async function conversationRoutes(app: FastifyInstance) {
       try {
         const conversation = await createConversation(prisma, request.body?.userId);
         return reply.send({ conversationId: conversation.id });
-      } catch (error) {
-        request.log.error(error, 'Failed to create conversation');
+      } catch (err) {
+        request.log.error({ err, route: 'conversation:start' });
 
-        const isProd = env.APP_ENV === 'prod';
         const message =
-          error instanceof Error ? error.message : 'Unknown error while creating conversation';
+          err instanceof Error ? err.message : 'Unknown error while creating conversation';
 
-        return reply.code(500).send({ error: isProd ? 'Internal server error' : message });
+        return sendErrorResponse(reply, 500, 'conversation.create_failed', message);
       }
     }
   );
@@ -60,6 +59,81 @@ export async function conversationRoutes(app: FastifyInstance) {
             score: z.number().nullable(),
             feedback: z.string().nullable(),
             createdAt: z.string()
+          }),
+          404: errorResponseSchema,
+          500: errorResponseSchema
+        }
+      }
+    },
+    async (request, reply) => {
+      const conversation = await prisma.$transaction(async (tx) => {
+        const updatedConversation = await tx.conversation.update({
+          where: { id: request.params.id },
+          data: { transcript: request.body.transcript }
+        });
+
+        await tx.conversationLog.create({
+          data: {
+            conversationId: updatedConversation.id,
+            role: 'user',
+            type: ConversationLogType.TRANSCRIPT,
+            content: request.body.transcript
+          }
+        });
+
+        return updatedConversation;
+      });
+
+        if (!conversation) {
+          return sendErrorResponse(
+            reply,
+            404,
+            'conversation.not_found',
+            'Conversation not found',
+            { conversationId: request.params.id }
+          );
+        }
+
+        const updatedConversation = await prisma.conversation.update({
+          where: { id: request.params.id },
+          data: { transcript: request.body.transcript }
+        });
+
+        return reply.send(formatConversation(updatedConversation));
+      } catch (err) {
+        request.log.error({ err, route: 'conversation:updateTranscript' });
+
+        const message =
+          err instanceof Error ? err.message : 'Failed to update conversation transcript';
+
+        return sendErrorResponse(reply, 500, 'conversation.transcript_update_failed', message, {
+          conversationId: request.params.id
+        });
+      }
+    }
+  );
+
+  app.withTypeProvider<ZodTypeProvider>().get(
+    '/api/conversation/:id/logs',
+    {
+      schema: {
+        params: z.object({ id: z.string() }),
+        querystring: z.object({
+          type: z.nativeEnum(ConversationLogType).optional()
+        }),
+        response: {
+          200: z.object({
+            logs: z.array(
+              z.object({
+                id: z.string(),
+                conversationId: z.string(),
+                role: z.string(),
+                type: z.nativeEnum(ConversationLogType),
+                content: z.string(),
+                context: z.unknown().nullable(),
+                createdAt: z.string()
+              })
+            )
           })
         }
       }
@@ -95,7 +169,9 @@ export async function conversationRoutes(app: FastifyInstance) {
             score: z.number().nullable(),
             feedback: z.string().nullable(),
             createdAt: z.string()
-          })
+          }),
+          404: errorResponseSchema,
+          500: errorResponseSchema
         }
       }
     },
