@@ -9,7 +9,7 @@ import { conversationRoutes } from './routes/conversation.js';
 import { tokenRoutes } from './routes/token.js';
 import { realtimeRoutes } from './routes/realtime.js';
 import { scoreRoutes } from './routes/score.js';
-import { cacheClient } from './services/cache.js';
+import { analyticsRoutes } from './routes/analytics.js';
 
 export const buildServer = () => {
   const app = Fastify({
@@ -100,6 +100,7 @@ export const buildServer = () => {
   app.register(tokenRoutes);
   app.register(realtimeRoutes);
   app.register(scoreRoutes);
+  app.register(analyticsRoutes);
 
   return app;
 };

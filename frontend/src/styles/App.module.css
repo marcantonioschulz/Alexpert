@@ -67,6 +67,10 @@
   }
 }
 
+.fullWidthCard {
+  grid-column: 1 / -1;
+}
+
 .card {
   background-color: #ffffff;
   border-radius: 1rem;
@@ -300,42 +304,34 @@ textarea {
   color: #1d4ed8;
 }
 
-.scoreSkeleton {
-  display: grid;
+.exportActions {
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.75rem;
-  background: #f8fafc;
+}
+
+.secondaryButton {
+  padding: 0.65rem 1.2rem;
   border-radius: 0.75rem;
-  padding: 1.25rem;
+  border: 1px solid #bfdbfe;
+  background-color: #ffffff;
+  color: #1d4ed8;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
 }
 
-.scoreSkeletonValue,
-.scoreSkeletonText {
-  height: 1.2rem;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #e2e8f0, #f8fafc, #e2e8f0);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+.secondaryButton:hover {
+  background-color: #dbeafe;
+  transform: translateY(-1px);
 }
 
-.scoreSkeletonValue {
-  width: 40%;
-  height: 2.5rem;
+.secondaryButton:active {
+  transform: translateY(0);
 }
 
-.scoreSkeletonText {
-  width: 80%;
-}
-
-.errorInline {
-  color: #dc2626;
-  font-weight: 500;
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
+.secondaryButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }

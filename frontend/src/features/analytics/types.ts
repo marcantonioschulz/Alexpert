@@ -1,16 +1,3 @@
-import type { Conversation, ConversationLog } from '@prisma/client';
-
-export type ConversationResponse = Conversation;
-export type ConversationLogResponse = ConversationLog;
-
-export type ConversationDto = {
-  id: string;
-  transcript: string | null;
-  score: number | null;
-  feedback: string | null;
-  createdAt: string;
-};
-
 export type AnalyticsSummary = {
   totalConversations: number;
   scoredConversations: number;
@@ -21,13 +8,13 @@ export type AnalyticsSummary = {
   lowestScore: { conversationId: string; score: number } | null;
 };
 
-export type AnalyticsDailyTrend = {
+export type AnalyticsTrendPoint = {
   date: string;
   conversations: number;
   averageScore: number | null;
 };
 
-export type ScoreDistributionBucket = {
+export type ScoreDistributionPoint = {
   range: string;
   count: number;
 };

@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { API_HEADERS } from '../utils/api';
 
 type SimulationStatus = 'idle' | 'starting' | 'live' | 'ended' | 'error';
 type SpeakerState = 'idle' | 'ai' | 'user';
@@ -18,10 +19,6 @@ type ConversationPayload = {
   createdAt: string;
 };
 
-const API_HEADERS = import.meta.env.VITE_API_KEY
-  ? { 'x-api-key': import.meta.env.VITE_API_KEY as string }
-  : undefined;
-
 export const useSimulation = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
@@ -37,96 +34,7 @@ export const useSimulation = () => {
   const [transcript, setTranscript] = useState<string | null>(null);
   const [score, setScore] = useState<ScoreResponse | null>(null);
   const [transcriptDraft, setTranscriptDraft] = useState('');
-  const [speakerState, setSpeakerState] = useState<SpeakerState>('idle');
-  const [scorePhase, setScorePhase] = useState<ScorePhase>('idle');
-  const [transcriptPhase, setTranscriptPhase] = useState<TranscriptPhase>('idle');
-
-  const updateSpeakerState = useCallback((next: SpeakerState) => {
-    setSpeakerState(next);
-  }, []);
-
-  const setIdleWithDelay = useCallback(() => {
-    if (idleTimeoutRef.current) {
-      window.clearTimeout(idleTimeoutRef.current);
-    }
-
-    idleTimeoutRef.current = window.setTimeout(() => {
-      if (!aiSpeakingRef.current && !userSpeakingRef.current) {
-        updateSpeakerState('idle');
-      }
-    }, 250);
-  }, [updateSpeakerState]);
-
-  const attachRemoteTrackListeners = useCallback(
-    (track: MediaStreamTrack) => {
-      const handleUnmute = () => {
-        aiSpeakingRef.current = true;
-        updateSpeakerState('ai');
-      };
-
-      const handleMute = () => {
-        aiSpeakingRef.current = false;
-        if (userSpeakingRef.current) {
-          updateSpeakerState('user');
-        } else {
-          setIdleWithDelay();
-        }
-      };
-
-      track.addEventListener('unmute', handleUnmute);
-      track.addEventListener('mute', handleMute);
-      track.addEventListener('ended', handleMute);
-
-      return () => {
-        track.removeEventListener('unmute', handleUnmute);
-        track.removeEventListener('mute', handleMute);
-        track.removeEventListener('ended', handleMute);
-      };
-    },
-    [setIdleWithDelay, updateSpeakerState]
-  );
-
-  const teardownRemoteTrackListenersRef = useRef<(() => void) | null>(null);
-
-  const handleVadMessage = useCallback(
-    (rawMessage: string) => {
-      try {
-        const payload = JSON.parse(rawMessage);
-        if (!payload || typeof payload !== 'object') {
-          return;
-        }
-
-        if ('type' in payload && payload.type === 'server_vad') {
-          const status =
-            (typeof payload.status === 'string' && payload.status) ||
-            (typeof payload.event === 'string' && payload.event) ||
-            (payload.data && typeof payload.data.status === 'string' && payload.data.status);
-
-          if (!status) {
-            return;
-          }
-
-          const normalized = status.toLowerCase();
-          if (normalized.includes('start')) {
-            userSpeakingRef.current = true;
-            updateSpeakerState('user');
-          }
-
-          if (normalized.includes('stop') || normalized.includes('end')) {
-            userSpeakingRef.current = false;
-            if (aiSpeakingRef.current) {
-              updateSpeakerState('ai');
-            } else {
-              setIdleWithDelay();
-            }
-          }
-        }
-      } catch (parseError) {
-        console.warn('Unable to parse VAD message', parseError);
-      }
-    },
-    [setIdleWithDelay, updateSpeakerState]
-  );
+  const [conversationDetails, setConversationDetails] = useState<ConversationPayload | null>(null);
 
   const cleanupMedia = useCallback(() => {
     if (idleTimeoutRef.current) {
@@ -176,6 +84,9 @@ export const useSimulation = () => {
 
       const startPayload: { conversationId: string } = await startResponse.json();
       setConversationId(startPayload.conversationId);
+      setConversationDetails((previous) =>
+        previous?.id === startPayload.conversationId ? previous : null
+      );
 
       const tokenResponse = await fetch('/api/token', {
         method: 'POST',
@@ -221,7 +132,7 @@ export const useSimulation = () => {
         };
       });
 
-      const offer = await pc.createOffer({ offerToReceiveAudio: true, voiceActivityDetection: true });
+      const offer = await pc.createOffer({ offerToReceiveAudio: true });
       await pc.setLocalDescription(offer);
 
       const sdpResponse = await fetch('/api/realtime/session', {
@@ -274,19 +185,10 @@ export const useSimulation = () => {
         body: JSON.stringify({ transcript: transcriptDraft })
       });
 
-      if (!response.ok) {
-        throw new Error('Transkript konnte nicht gespeichert werden.');
-      }
-
-      const payload = (await response.json()) as ConversationPayload;
-      setTranscript(payload.transcript);
-      setTranscriptDraft('');
-      setTranscriptPhase('idle');
-    } catch (err) {
-      console.error(err);
-      setTranscriptPhase('idle');
-      setError(err instanceof Error ? err.message : 'Unbekannter Fehler beim Speichern des Transkripts');
-    }
+    const payload = (await response.json()) as ConversationPayload;
+    setTranscript(payload.transcript);
+    setTranscriptDraft('');
+    setConversationDetails(payload);
   }, [conversationId, transcriptDraft]);
 
   const fetchTranscript = useCallback(async () => {
@@ -305,17 +207,11 @@ export const useSimulation = () => {
         throw new Error('Transkript konnte nicht geladen werden.');
       }
 
-      const payload = (await response.json()) as ConversationPayload;
-      setTranscript(payload.transcript);
-      if (payload.score !== null && payload.feedback !== null) {
-        setScore({ score: payload.score, feedback: payload.feedback });
-        setScorePhase('ready');
-      }
-      setTranscriptPhase('idle');
-    } catch (err) {
-      console.error(err);
-      setTranscriptPhase('idle');
-      setError(err instanceof Error ? err.message : 'Unbekannter Fehler beim Laden des Transkripts');
+    const payload = (await response.json()) as ConversationPayload;
+    setTranscript(payload.transcript);
+    setConversationDetails(payload);
+    if (payload.score !== null && payload.feedback !== null) {
+      setScore({ score: payload.score, feedback: payload.feedback });
     }
   }, [conversationId]);
 
@@ -339,19 +235,19 @@ export const useSimulation = () => {
         throw new Error('Score konnte nicht berechnet werden.');
       }
 
-      const payload = (await response.json()) as ScoreResponse & { conversationId: string };
-      setScore({ score: payload.score, feedback: payload.feedback });
-      setScorePhase('ready');
-    } catch (err) {
-      console.error(err);
-      setScorePhase('error');
-      setError(err instanceof Error ? err.message : 'Unbekannter Fehler bei der Score-Berechnung');
-    }
+    const payload = (await response.json()) as ScoreResponse & { conversationId: string };
+    setScore({ score: payload.score, feedback: payload.feedback });
+    setConversationDetails((previous) =>
+      previous && previous.id === payload.conversationId
+        ? { ...previous, score: payload.score, feedback: payload.feedback }
+        : previous
+    );
   }, [conversationId]);
 
   return {
     audioRef,
     conversationId,
+    conversationDetails,
     endSimulation,
     error,
     fetchTranscript,
