@@ -1,15 +1,14 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
-import { ConversationLogType } from '@prisma/client';
-import { prisma } from '../lib/prisma.js';
 import { env } from '../lib/env.js';
-import type {
-  ConversationDto,
-  ConversationLogDto,
-  ConversationLogResponse,
-  ConversationResponse
-} from '../types/index.js';
+import { prisma } from '../lib/prisma.js';
+import { ServiceError } from '../services/errors.js';
+import {
+  createConversation,
+  getConversation,
+  updateConversationTranscript
+} from '../services/conversationService.js';
 
 export async function conversationRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
@@ -30,12 +29,7 @@ export async function conversationRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const conversation = await prisma.conversation.create({
-          data: {
-            userId: request.body?.userId ?? 'demo-user'
-          }
-        });
-
+        const conversation = await createConversation(prisma, request.body?.userId);
         return reply.send({ conversationId: conversation.id });
       } catch (err) {
         request.log.error({ err, route: 'conversation:start' });
@@ -145,15 +139,21 @@ export async function conversationRoutes(app: FastifyInstance) {
       }
     },
     async (request, reply) => {
-      const logs = await prisma.conversationLog.findMany({
-        where: {
-          conversationId: request.params.id,
-          ...(request.query.type ? { type: request.query.type } : {})
-        },
-        orderBy: { createdAt: 'asc' }
-      });
+      try {
+        const conversation = await updateConversationTranscript(
+          prisma,
+          request.params.id,
+          request.body.transcript
+        );
 
-      return reply.send({ logs: logs.map(formatConversationLog) });
+        return reply.send(conversation);
+      } catch (error) {
+        if (error instanceof ServiceError && error.code === 'NOT_FOUND') {
+          return reply.notFound('Conversation not found');
+        }
+
+        throw error;
+      }
     }
   );
 
@@ -177,45 +177,15 @@ export async function conversationRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const conversation = await prisma.conversation.findUnique({
-          where: { id: request.params.id }
-        });
-
-        if (!conversation) {
-          return sendErrorResponse(
-            reply,
-            404,
-            'conversation.not_found',
-            'Conversation not found',
-            { conversationId: request.params.id }
-          );
+        const conversation = await getConversation(prisma, request.params.id);
+        return reply.send(conversation);
+      } catch (error) {
+        if (error instanceof ServiceError && error.code === 'NOT_FOUND') {
+          return reply.notFound('Conversation not found');
         }
 
-        return reply.send(formatConversation(conversation));
-      } catch (err) {
-        request.log.error({ err, route: 'conversation:get' });
-
-        const message = err instanceof Error ? err.message : 'Failed to fetch conversation';
-
-        return sendErrorResponse(reply, 500, 'conversation.fetch_failed', message, {
-          conversationId: request.params.id
-        });
+        throw error;
       }
     }
   );
-}
-
-function formatConversation(conversation: ConversationResponse): ConversationDto {
-  return {
-    ...conversation,
-    createdAt: conversation.createdAt.toISOString()
-  };
-}
-
-function formatConversationLog(log: ConversationLogResponse): ConversationLogDto {
-  return {
-    ...log,
-    context: log.context ?? null,
-    createdAt: log.createdAt.toISOString()
-  };
 }
