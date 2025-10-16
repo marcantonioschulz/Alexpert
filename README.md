@@ -78,6 +78,41 @@ Starte eine Umgebung, indem du die gewünschte Datei in `.env` kopierst (oder en
 
 Für lokale Entwicklungen erzeugst du neue Migrationen mit `npx prisma migrate dev --name <beschreibung>` direkt im Ordner [`backend/`](./backend). In produktiven Setups muss vor jedem Release `npx prisma migrate deploy` ausgeführt werden, damit alle ausstehenden Migrationen gegen die Datenbank laufen. Unser [`docker-compose.yml`](./docker-compose.yml) erledigt diesen Schritt beim Containerstart automatisch; übertrage denselben Befehl in deine CI/CD-Pipeline bzw. das verwendete Deployment-Skript.
 
+
+## Tests & Qualitätsmetriken
+
+### Backend (Fastify + Prisma)
+
+```bash
+cd backend
+# führt alle Unit- und Integrationstests aus
+npm run test
+
+# interaktiver Watch-Modus während der Entwicklung
+npm run test:watch
+
+# Coverage-Report (schlägt fehl, sobald < 80 % erreicht werden)
+npm run test:coverage
+```
+
+Die Integrationstests starten automatisch eine isolierte PostgreSQL-Instanz per [Testcontainers](https://testcontainers.com/). Stelle sicher, dass Docker innerhalb der CI-Laufumgebung verfügbar ist. Die in `vitest.config.ts` hinterlegten Thresholds erzwingen die 80 %-Coverage-Grenze (`lines`, `functions`, `branches`, `statements`).
+
+### Frontend (React + Vite)
+
+```bash
+cd frontend
+# React-Komponententests (Vitest + Testing Library)
+npm run test
+
+# Coverage-Report inklusive Threshold-Prüfung (80 %)
+npm run test:coverage
+
+# End-to-End-Tests (Playwright) – erwartet einen laufenden Dev-Server
+npm run test:e2e
+```
+
+Setze im CI zwei Schritte auf: `npm run test:coverage` für Backend und Frontend (idealerweise in separaten Jobs) sowie `npm run test:e2e` für Playwright. Die Coverage-Gates schlagen automatisch fehl, wenn die 80 %-Grenze unterschritten wird; zusätzliche `coverage-summary.json` Artefakte stehen für Upload/Analyse bereit.
+
 ### Reverse-Proxy-Automatisierung
 
 Mit [`scripts/setup-proxy.sh`](./scripts/setup-proxy.sh) kannst du den Nginx Proxy Manager API-gesteuert konfigurieren:
@@ -87,3 +122,7 @@ Mit [`scripts/setup-proxy.sh`](./scripts/setup-proxy.sh) kannst du den Nginx Pro
 ```
 
 Das Skript liest automatisch `.env`, authentifiziert sich via `NPM_TOKEN` oder `NPM_EMAIL`/`NPM_PASSWORD` und erzeugt bzw. aktualisiert den entsprechenden Proxy Host. Über Variablen wie `NPM_CERTIFICATE_ID` und `NPM_FORCE_SSL` kannst du SSL-Erzwingung oder bestehende Zertifikate steuern.
+
+## Monitoring & Observability
+
+Die Datei [`docker-compose.yml`](./docker-compose.yml) enthält jetzt optional aktivierbare Services für Prometheus, Alertmanager, Grafana und node-exporter. Alle Konfigurationsdateien sowie vorprovisionierte Dashboards liegen im Ordner [`monitoring/`](./monitoring). Eine ausführliche Anleitung inklusive Alert-Routing nach Slack/Discord findest du in [`docs/monitoring.md`](./docs/monitoring.md).

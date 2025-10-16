@@ -1,6 +1,7 @@
-import type { Conversation } from '@prisma/client';
+import type { Conversation, ConversationLog } from '@prisma/client';
 
 export type ConversationResponse = Conversation;
+export type ConversationLogResponse = ConversationLog;
 
 export type ConversationDto = {
   id: string;

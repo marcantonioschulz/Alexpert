@@ -1,12 +1,13 @@
-import type { FastifyInstance } from 'fastify';
+import crypto from 'node:crypto';
+import type { FastifyBaseLogger, FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import fetch from 'node-fetch';
+import { ConversationLogType } from '@prisma/client';
 import { env } from '../lib/env.js';
 import { prisma } from '../lib/prisma.js';
-
-const systemPrompt = `Bewerte dieses Verkaufsgespräch nach Klarheit, Bedarfsermittlung, Einwandbehandlung.
-Antworte ausschließlich als JSON im Format {"score": number, "feedback": string}.`;
+import { ServiceError } from '../services/errors.js';
+import { scoreConversation } from '../services/scoreService.js';
 
 export async function scoreRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
@@ -15,7 +16,8 @@ export async function scoreRoutes(app: FastifyInstance) {
       schema: {
         body: z.object({
           conversationId: z.string().optional(),
-          transcript: z.string().optional()
+          transcript: z.string().optional(),
+          stream: z.boolean().optional()
         }),
         response: {
           200: z.object({
@@ -23,122 +25,165 @@ export async function scoreRoutes(app: FastifyInstance) {
             score: z.number(),
             feedback: z.string()
           }),
-          500: z.object({
-            message: z.string()
-          })
+          400: errorResponseSchema,
+          404: errorResponseSchema,
+          500: errorResponseSchema
         }
       }
     },
     async (request, reply) => {
-      const { conversationId, transcript: transcriptFromBody } = request.body;
-
-      if (!conversationId && !transcriptFromBody) {
-        return reply.badRequest('conversationId oder transcript erforderlich');
-      }
-
-      const conversation = conversationId
-        ? await prisma.conversation.findUnique({ where: { id: conversationId } })
-        : null;
-
-      if (conversationId && !conversation) {
-        return reply.notFound('Conversation not found');
-      }
-
-      const transcript = transcriptFromBody ?? conversation?.transcript;
-
-      if (!transcript) {
-        return reply.badRequest('Kein Transkript vorhanden');
-      }
-
-      const response = await fetch('https://api.openai.com/v1/responses', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${env.OPENAI_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: env.RESPONSES_MODEL,
-          input: [
-            {
-              role: 'system',
-              content: [
-                {
-                  type: 'text',
-                  text: systemPrompt
-                }
-              ]
-            },
-            {
-              role: 'user',
-              content: [
-                {
-                  type: 'text',
-                  text: transcript
-                }
-              ]
-            }
-          ]
-        })
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        request.log.error({ errorText }, 'Failed to fetch score from OpenAI');
-        return reply.status(500).send({ message: 'Score request failed' });
-      }
-
-      const payload = (await response.json()) as Record<string, unknown> & {
-        output?: Array<{
-          content?: Array<{
-            text?: string;
-          }>;
-        }>;
-        content?: Array<{
-          text?: string;
-        }>;
-      };
-
-      const textContent =
-        payload.output?.[0]?.content?.[0]?.text ??
-        payload.content?.[0]?.text ??
-        '';
-
-      let parsed: { score: number; feedback: string } | null = null;
-
       try {
-        const jsonMatch = textContent.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          parsed = JSON.parse(jsonMatch[0]) as { score: number; feedback: string };
-        }
-      } catch (error) {
-        request.log.warn({ error }, 'Failed to parse score payload');
-      }
-
-      if (!parsed) {
-        return reply.status(500).send({ message: 'Antwort konnte nicht interpretiert werden' });
-      }
-
-      const boundedScore = Math.min(100, Math.max(0, Math.round(parsed.score)));
-
-      const updatedConversation = conversationId
-        ? await prisma.conversation.update({
-            where: { id: conversationId },
-            data: { score: boundedScore, feedback: parsed.feedback }
-          })
-        : await prisma.conversation.create({
-            data: {
-              userId: 'demo-user',
-              transcript,
-              score: boundedScore,
-              feedback: parsed.feedback
+        const result = await scoreConversation(
+          {
+            prisma,
+            fetch: fetch as unknown as typeof globalThis.fetch,
+            env: {
+              OPENAI_API_KEY: env.OPENAI_API_KEY,
+              RESPONSES_MODEL: env.RESPONSES_MODEL
             }
-          });
+          },
+          request.body
+        );
 
-      return reply.send({
-        conversationId: updatedConversation.id,
-        score: boundedScore,
-        feedback: parsed.feedback
-      });
+        return reply.send(result);
+      } catch (error) {
+        if (error instanceof ServiceError) {
+          switch (error.code) {
+            case 'BAD_REQUEST':
+              return reply.badRequest(error.message);
+            case 'NOT_FOUND':
+              return reply.notFound(error.message);
+            case 'UPSTREAM_ERROR':
+              request.log.error(error, 'Failed to fetch score from OpenAI');
+              return reply.status(500).send({ message: error.message });
+            default:
+              break;
+          }
+        }
+
+        throw error;
+      }
     }
   );
+}
+
+function parseScorePayload(
+  textContent: string,
+  logger: FastifyBaseLogger
+): { score: number; feedback: string } | null {
+  if (!textContent) {
+    return null;
+  }
+
+  try {
+    const jsonMatch = textContent.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]) as { score: number; feedback: string };
+    }
+  } catch (error) {
+    logger.warn({ error }, 'Failed to parse score payload');
+  }
+
+  return null;
+}
+
+function extractTextFromSSE(streamContent: string): string {
+  if (!streamContent) {
+    return '';
+  }
+
+  const lines = streamContent.split(/\r?\n/);
+  let aggregated = '';
+
+  for (const line of lines) {
+    if (!line.startsWith('data:')) {
+      continue;
+    }
+
+    const data = line.slice(5).trim();
+    if (!data || data === '[DONE]') {
+      continue;
+    }
+
+    try {
+      const parsed = JSON.parse(data) as { type?: string; delta?: string; content?: Array<{ text?: string }>; text?: string };
+
+      if (parsed.type === 'response.output_text.delta' && parsed.delta) {
+        aggregated += parsed.delta;
+      } else if (parsed.type === 'response.output_text.done') {
+        if (parsed.text) {
+          aggregated += parsed.text;
+        }
+      } else if (Array.isArray(parsed.content) && parsed.content[0]?.text) {
+        aggregated += parsed.content[0].text ?? '';
+      } else if (typeof parsed.text === 'string') {
+        aggregated += parsed.text;
+      }
+    } catch (error) {
+      // Ignore malformed lines
+    }
+  }
+
+  return aggregated;
+}
+
+function boundScore(score: number): number {
+  return Math.min(100, Math.max(0, Math.round(score)));
+}
+
+function createCacheKey(model: string, prompt: string, transcript: string): string {
+  return crypto.createHash('sha256').update(model).update('\0').update(prompt).update('\0').update(transcript).digest('hex');
+}
+
+async function getCachedScore(
+  key: string,
+  logger: FastifyBaseLogger
+): Promise<{ score: number; feedback: string } | null> {
+  try {
+    const cached = await cacheClient.get(key);
+    return cached ? (JSON.parse(cached) as { score: number; feedback: string }) : null;
+  } catch (error) {
+    logger.warn({ error }, 'Failed to retrieve cached score');
+    return null;
+  }
+}
+
+async function setCachedScore(
+  key: string,
+  value: { score: number; feedback: string },
+  logger: FastifyBaseLogger
+): Promise<void> {
+  try {
+    await cacheClient.set(key, JSON.stringify(value));
+  } catch (error) {
+    logger.warn({ error }, 'Failed to store score cache');
+  }
+}
+
+async function persistConversation({
+  existingConversationId,
+  transcript,
+  score,
+  feedback
+}: {
+  existingConversationId?: string;
+  transcript: string;
+  score: number;
+  feedback: string;
+}) {
+  if (existingConversationId) {
+    return prisma.conversation.update({
+      where: { id: existingConversationId },
+      data: { score, feedback }
+    });
+  }
+
+  return prisma.conversation.create({
+    data: {
+      userId: 'demo-user',
+      transcript,
+      score,
+      feedback
+    }
+  });
 }

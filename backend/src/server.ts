@@ -4,13 +4,14 @@ import cors from '@fastify/cors';
 import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
 import { env } from './lib/env.js';
 import { prisma } from './lib/prisma.js';
+import { metricsPlugin } from './plugins/metrics.js';
 import { conversationRoutes } from './routes/conversation.js';
 import { tokenRoutes } from './routes/token.js';
 import { realtimeRoutes } from './routes/realtime.js';
 import { scoreRoutes } from './routes/score.js';
 import { analyticsRoutes } from './routes/analytics.js';
 
-const buildServer = () => {
+export const buildServer = () => {
   const app = Fastify({
     logger: true
   });
@@ -31,22 +32,50 @@ const buildServer = () => {
 
   app.register(cors, { origin: originConfig });
   app.register(sensible);
+  app.register(metricsPlugin);
 
   app.setErrorHandler((error, request, reply) => {
-    request.log.error(error, 'Unhandled error');
-
     const statusCode = error.statusCode ?? 500;
     const isProd = env.APP_ENV === 'prod';
-    const showOriginalMessage = statusCode < 500 || !isProd;
-    const message = showOriginalMessage ? error.message : 'Internal server error';
+    const code = `ERR_${statusCode}`;
+    const rawMessage =
+      error instanceof Error
+        ? error.message
+        : typeof error === 'string'
+          ? error
+          : undefined;
+    const sanitizedMessage =
+      statusCode >= 500 && isProd
+        ? 'Internal server error'
+        : rawMessage && rawMessage.trim().length > 0
+          ? rawMessage
+          : 'Unexpected error';
+    const context = isProd
+      ? undefined
+      : {
+          requestId: request.id,
+          method: request.method,
+          url: request.url,
+          statusCode,
+          params: request.params,
+          query: request.query
+        };
 
-    const response: Record<string, unknown> = {
-      error: message
+    request.log.error(
+      {
+        code,
+        err: error,
+        statusCode,
+        ...(context ? { context } : {})
+      },
+      'Unhandled error'
+    );
+
+    const response: ErrorResponse = {
+      code,
+      message: sanitizedMessage,
+      ...(context ? { context } : {})
     };
-
-    if (!isProd && error.stack) {
-      response.stack = error.stack;
-    }
 
     reply.status(statusCode).send(response);
   });
@@ -64,6 +93,7 @@ const buildServer = () => {
 
   app.addHook('onClose', async () => {
     await prisma.$disconnect();
+    await cacheClient.disconnect();
   });
 
   app.register(conversationRoutes);
