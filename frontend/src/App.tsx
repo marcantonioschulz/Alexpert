@@ -2,6 +2,8 @@ import { useMemo } from 'react';
 import { useSimulation } from './hooks/useSimulation';
 import styles from './styles/App.module.css';
 
+type SpeakerState = 'idle' | 'ai' | 'user';
+
 function StatusBadge({ status }: { status: string }) {
   const label = useMemo(() => {
     switch (status) {
@@ -36,6 +38,55 @@ function StatusBadge({ status }: { status: string }) {
   return <span className={`${styles.badge} ${statusClass ?? ''}`}>{label}</span>;
 }
 
+function SpeakerPill({
+  label,
+  active,
+  variant,
+  description
+}: {
+  label: string;
+  active: boolean;
+  variant: 'user' | 'ai';
+  description: string;
+}) {
+  return (
+    <div
+      className={`${styles.speakerPill} ${
+        active ? `${styles.speakerPillActive} ${styles[`speakerPill${variant === 'ai' ? 'Ai' : 'User'}`]}` : ''
+      }`}
+    >
+      <div className={styles.speakerMeta}>
+        <span className={styles.speakerLabel}>{label}</span>
+        <span className={styles.speakerDescription}>{description}</span>
+      </div>
+      <div className={styles.voiceWave} data-active={active}>
+        <span />
+        <span />
+        <span />
+      </div>
+    </div>
+  );
+}
+
+function SpeakerIndicator({ speakerState }: { speakerState: SpeakerState }) {
+  return (
+    <div className={styles.speakerStatus}>
+      <SpeakerPill
+        label="Du"
+        variant="user"
+        active={speakerState === 'user'}
+        description={speakerState === 'user' ? 'Du sprichst gerade' : 'Bereit'}
+      />
+      <SpeakerPill
+        label="KI"
+        variant="ai"
+        active={speakerState === 'ai'}
+        description={speakerState === 'ai' ? 'Antwortet dir' : 'Wartet auf dich'}
+      />
+    </div>
+  );
+}
+
 function App() {
   const {
     audioRef,
@@ -43,12 +94,15 @@ function App() {
     endSimulation,
     error,
     fetchTranscript,
+    scorePhase,
+    speakerState,
     requestScore,
     saveTranscript,
     score,
     startSimulation,
     status,
     transcript,
+    transcriptPhase,
     transcriptDraft,
     setTranscriptDraft
   } = useSimulation();
@@ -70,6 +124,7 @@ function App() {
         <section className={styles.card}>
           <h2>Simulation steuern</h2>
           <p>Starte die Simulation und sprich mit der KI über dein Angebot.</p>
+          <SpeakerIndicator speakerState={speakerState} />
           <div className={styles.actions}>
             <button type="button" onClick={startSimulation} disabled={!canStart}>
               Starte Simulation
@@ -81,7 +136,16 @@ function App() {
           {conversationId && (
             <p className={styles.meta}>Konversation-ID: {conversationId}</p>
           )}
-          {error && <p className={styles.error}>{error}</p>}
+          {error && (
+            <div className={styles.errorPanel}>
+              <p>{error}</p>
+              {status === 'error' && (
+                <button type="button" onClick={startSimulation}>
+                  Erneut versuchen
+                </button>
+              )}
+            </div>
+          )}
           <audio ref={audioRef} autoPlay className={styles.audio} />
         </section>
 
@@ -98,23 +162,58 @@ function App() {
             onChange={(event) => setTranscriptDraft(event.target.value)}
           />
           <div className={styles.actions}>
-            <button type="button" onClick={saveTranscript} disabled={!transcriptDraft}>
+            <button
+              type="button"
+              onClick={saveTranscript}
+              disabled={!transcriptDraft || transcriptPhase === 'saving'}
+            >
               Transkript speichern
             </button>
-            <button type="button" onClick={fetchTranscript} disabled={!conversationId}>
+            <button
+              type="button"
+              onClick={fetchTranscript}
+              disabled={!conversationId || transcriptPhase === 'loading'}
+            >
               Transkript anzeigen
             </button>
           </div>
-          {transcript && <pre className={styles.transcript}>{transcript}</pre>}
+          {transcriptPhase === 'saving' && (
+            <p className={styles.helper}>Transkript wird gespeichert...</p>
+          )}
+          {transcriptPhase === 'loading' && (
+            <div className={styles.transcriptSkeleton} aria-hidden>
+              <span />
+              <span />
+              <span />
+            </div>
+          )}
+          {transcript && transcriptPhase !== 'loading' && (
+            <pre className={styles.transcript}>{transcript}</pre>
+          )}
         </section>
 
         <section className={styles.card}>
           <h2>Scoreboard</h2>
           <p>Fordere eine Bewertung der Unterhaltung anhand der Kriterien Klarheit, Bedarf und Einwände an.</p>
-          <button type="button" onClick={requestScore} disabled={!conversationId}>
-            Score berechnen
+          <button
+            type="button"
+            onClick={requestScore}
+            disabled={!conversationId || scorePhase === 'loading'}
+          >
+            {scorePhase === 'loading' ? 'Bewertung wird berechnet…' : 'Score berechnen'}
           </button>
-          {score && (
+          {scorePhase === 'loading' && (
+            <div className={styles.scoreSkeleton} aria-hidden>
+              <div className={styles.scoreSkeletonValue} />
+              <div className={styles.scoreSkeletonText} />
+            </div>
+          )}
+          {scorePhase === 'error' && (
+            <p className={styles.errorInline}>
+              Score konnte nicht geladen werden. Bitte versuche es erneut.
+            </p>
+          )}
+          {score && scorePhase === 'ready' && (
             <div className={styles.scorePanel}>
               <div className={styles.scoreValue}>{score.score}</div>
               <p>{score.feedback}</p>
