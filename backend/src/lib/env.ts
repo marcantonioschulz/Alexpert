@@ -12,7 +12,13 @@ const envSchema = z.object({
   REALTIME_MODEL: z.string().default('gpt-4o-realtime-preview'),
   RESPONSES_MODEL: z.string().default('gpt-4o-mini'),
   DATABASE_URL: z.string().url(),
-  CORS_ORIGIN: z.string().optional()
+  CORS_ORIGIN: z.string().optional(),
+  OPENAI_TIMEOUT_MS: z.coerce.number().optional(),
+  OPENAI_MAX_RETRIES: z.coerce.number().optional(),
+  OPENAI_INITIAL_BACKOFF_MS: z.coerce.number().optional(),
+  OPENAI_BACKOFF_MULTIPLIER: z.coerce.number().optional(),
+  CACHE_URL: z.string().url().optional(),
+  CACHE_TTL_SECONDS: z.coerce.number().optional()
 });
 
 const parsed = envSchema.safeParse(process.env);
