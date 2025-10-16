@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
+import { env } from '../lib/env.js';
 import type { ConversationDto, ConversationResponse } from '../types/index.js';
 
 export async function conversationRoutes(app: FastifyInstance) {
@@ -20,13 +21,23 @@ export async function conversationRoutes(app: FastifyInstance) {
       }
     },
     async (request, reply) => {
-      const conversation = await prisma.conversation.create({
-        data: {
-          userId: request.body?.userId ?? 'demo-user'
-        }
-      });
+      try {
+        const conversation = await prisma.conversation.create({
+          data: {
+            userId: request.body?.userId ?? 'demo-user'
+          }
+        });
 
-      return reply.send({ conversationId: conversation.id });
+        return reply.send({ conversationId: conversation.id });
+      } catch (error) {
+        request.log.error(error, 'Failed to create conversation');
+
+        const isProd = env.APP_ENV === 'prod';
+        const message =
+          error instanceof Error ? error.message : 'Unknown error while creating conversation';
+
+        return reply.code(500).send({ error: isProd ? 'Internal server error' : message });
+      }
     }
   );
 
