@@ -4,6 +4,7 @@ import { z } from 'zod';
 import fetch from 'node-fetch';
 import { env } from '../lib/env.js';
 import { getUserPreferences, resolveOpenAIKey } from '../lib/preferences.js';
+import { errorResponseSchema, sendErrorResponse } from './error-response.js';
 
 export async function realtimeRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
@@ -24,20 +25,21 @@ export async function realtimeRoutes(app: FastifyInstance) {
       }
     },
     async (request, reply) => {
-      const userId = request.body.userId ?? 'demo-user';
-      const preferences = await getUserPreferences(userId);
-      const model = request.body.model ?? preferences.realtimeModel ?? env.REALTIME_MODEL;
-      const bearerToken = request.body.token ?? resolveOpenAIKey(preferences);
+      try {
+        const userId = request.body.userId ?? 'demo-user';
+        const preferences = await getUserPreferences(userId);
+        const model = request.body.model ?? preferences.realtimeModel ?? env.REALTIME_MODEL;
+        const bearerToken = request.body.token ?? resolveOpenAIKey(preferences);
 
-      const response = await fetch(`https://api.openai.com/v1/realtime?model=${model}`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${bearerToken}`,
-          'Content-Type': 'application/sdp',
-          'OpenAI-Beta': 'realtime=v1'
-        },
-        body: request.body.sdp
-      });
+        const response = await fetch(`https://api.openai.com/v1/realtime?model=${model}`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${bearerToken}`,
+            'Content-Type': 'application/sdp',
+            'OpenAI-Beta': 'realtime=v1'
+          },
+          body: request.body.sdp
+        });
 
         if (!response.ok) {
           const errorText = await response.text();
