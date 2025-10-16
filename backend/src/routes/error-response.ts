@@ -8,6 +8,7 @@ export const errorResponseSchema = z.object({
   context: z.record(z.any()).optional()
 });
 
+export type ErrorResponse = z.infer<typeof errorResponseSchema>;
 export type ErrorResponseContext = Record<string, unknown> | undefined;
 
 export function sendErrorResponse(
