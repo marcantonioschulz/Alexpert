@@ -49,27 +49,66 @@ services:
       - '${VITE_PORT:-3000}:${VITE_PORT:-3000}'
     command: npm run dev
 
-  db-backup:
-    image: postgres:16-alpine
-    container_name: sales-simulation-db-backup
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: sales-simulation-node-exporter
+    restart: unless-stopped
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/host'
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host:ro
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: sales-simulation-prometheus
     restart: unless-stopped
     depends_on:
-      - db
-    environment:
-      POSTGRES_HOST: ${POSTGRES_HOST:-db}
-      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
-      POSTGRES_DB: ${POSTGRES_DB:-sales_simulation}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      PGPASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      BACKUP_SCHEDULE: ${BACKUP_SCHEDULE:-0 2 * * *}
-      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-}
-      BACKUP_DIR: /backups
+      - backend
+      - node-exporter
     volumes:
-      - postgres_backups:/backups
-      - ./scripts/backups/run-backup.sh:/usr/local/bin/run-backup.sh:ro
-      - ./scripts/backups/backup-cron.sh:/usr/local/bin/backup-cron.sh:ro
-    entrypoint: ["/bin/sh", "/usr/local/bin/backup-cron.sh"]
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus-alerts.yml:/etc/prometheus/prometheus-alerts.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - '9090:9090'
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: sales-simulation-alertmanager
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    volumes:
+      - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    ports:
+      - '9093:9093'
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: sales-simulation-grafana
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/etc/grafana/dashboards:ro
+    ports:
+      - '3001:3000'
 
 volumes:
   postgres_data:
-  postgres_backups:
+  prometheus_data:
+  grafana_data:

@@ -4,9 +4,10 @@ import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { env } from '../lib/env.js';
 import { prisma } from '../lib/prisma.js';
-import { cacheClient } from '../services/cache.js';
-import { openAIClient } from '../services/openaiClient.js';
-import { errorResponseSchema, sendErrorResponse } from './error-response.js';
+import { openAIRequestCounter, openAITokenCounter } from '../lib/metrics.js';
+
+const systemPrompt = `Bewerte dieses Verkaufsgespräch nach Klarheit, Bedarfsermittlung, Einwandbehandlung.
+Antworte ausschließlich als JSON im Format {"score": number, "feedback": string}.`;
 
 export async function scoreRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
@@ -232,6 +233,11 @@ export async function scoreRoutes(app: FastifyInstance) {
 
       const response = await openAIClient.responses(requestPayload);
 
+      openAIRequestCounter.inc({
+        endpoint: 'responses',
+        status: response.ok ? 'success' : 'error'
+      });
+
       if (!response.ok) {
         const errorText = await response.text();
         request.log.error({ errorText }, 'Failed to fetch score from OpenAI');
@@ -258,7 +264,12 @@ export async function scoreRoutes(app: FastifyInstance) {
         payload.content?.[0]?.text ??
         '';
 
-      const parsed = parseScorePayload(textContent, request.log);
+      const usage = (payload as { usage?: { total_tokens?: number } }).usage;
+      if (usage?.total_tokens) {
+        openAITokenCounter.inc({ endpoint: 'responses' }, usage.total_tokens);
+      }
+
+      let parsed: { score: number; feedback: string } | null = null;
 
         const boundedScore = Math.min(100, Math.max(0, Math.round(parsed.score)));
 

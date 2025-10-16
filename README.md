@@ -122,3 +122,7 @@ Mit [`scripts/setup-proxy.sh`](./scripts/setup-proxy.sh) kannst du den Nginx Pro
 ```
 
 Das Skript liest automatisch `.env`, authentifiziert sich via `NPM_TOKEN` oder `NPM_EMAIL`/`NPM_PASSWORD` und erzeugt bzw. aktualisiert den entsprechenden Proxy Host. Über Variablen wie `NPM_CERTIFICATE_ID` und `NPM_FORCE_SSL` kannst du SSL-Erzwingung oder bestehende Zertifikate steuern.
+
+## Monitoring & Observability
+
+Die Datei [`docker-compose.yml`](./docker-compose.yml) enthält jetzt optional aktivierbare Services für Prometheus, Alertmanager, Grafana und node-exporter. Alle Konfigurationsdateien sowie vorprovisionierte Dashboards liegen im Ordner [`monitoring/`](./monitoring). Eine ausführliche Anleitung inklusive Alert-Routing nach Slack/Discord findest du in [`docs/monitoring.md`](./docs/monitoring.md).
