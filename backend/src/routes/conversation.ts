@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
+import { ConversationLogType } from '@prisma/client';
 import { z } from 'zod';
 import { env } from '../lib/env.js';
 import { prisma } from '../lib/prisma.js';
@@ -9,6 +10,11 @@ import {
   getConversation,
   updateConversationTranscript
 } from '../services/conversationService.js';
+import {
+  errorResponseSchema,
+  sendErrorResponse,
+  type ErrorResponse
+} from './error-response.js';
 
 export async function conversationRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
@@ -66,23 +72,24 @@ export async function conversationRoutes(app: FastifyInstance) {
       }
     },
     async (request, reply) => {
-      const conversation = await prisma.$transaction(async (tx) => {
-        const updatedConversation = await tx.conversation.update({
-          where: { id: request.params.id },
-          data: { transcript: request.body.transcript }
-        });
+      try {
+        const conversation = await prisma.$transaction(async (tx) => {
+          const updatedConversation = await tx.conversation.update({
+            where: { id: request.params.id },
+            data: { transcript: request.body.transcript }
+          });
 
-        await tx.conversationLog.create({
-          data: {
-            conversationId: updatedConversation.id,
-            role: 'user',
-            type: ConversationLogType.TRANSCRIPT,
-            content: request.body.transcript
-          }
-        });
+          await tx.conversationLog.create({
+            data: {
+              conversationId: updatedConversation.id,
+              role: 'user',
+              type: ConversationLogType.TRANSCRIPT,
+              content: request.body.transcript
+            }
+          });
 
-        return updatedConversation;
-      });
+          return updatedConversation;
+        });
 
         if (!conversation) {
           return sendErrorResponse(
@@ -94,12 +101,7 @@ export async function conversationRoutes(app: FastifyInstance) {
           );
         }
 
-        const updatedConversation = await prisma.conversation.update({
-          where: { id: request.params.id },
-          data: { transcript: request.body.transcript }
-        });
-
-        return reply.send(formatConversation(updatedConversation));
+        return reply.send(conversation);
       } catch (err) {
         request.log.error({ err, route: 'conversation:updateTranscript' });
 
