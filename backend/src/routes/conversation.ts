@@ -3,12 +3,7 @@ import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import type { ConversationDto, ConversationResponse, ErrorResponse } from '../types/index.js';
-
-const errorResponseSchema = z.object({
-  code: z.string(),
-  message: z.string(),
-  context: z.record(z.any()).optional()
-});
+import { errorResponseSchema, sendErrorResponse } from './error-response.js';
 
 export async function conversationRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
@@ -36,9 +31,13 @@ export async function conversationRoutes(app: FastifyInstance) {
         });
 
         return reply.send({ conversationId: conversation.id });
-      } catch (error) {
-        request.log.error({ err: error }, 'Failed to create conversation');
-        throw error;
+      } catch (err) {
+        request.log.error({ err, route: 'conversation:start' });
+
+        const message =
+          err instanceof Error ? err.message : 'Unknown error while creating conversation';
+
+        return sendErrorResponse(reply, 500, 'conversation.create_failed', message);
       }
     }
   );
@@ -60,17 +59,44 @@ export async function conversationRoutes(app: FastifyInstance) {
             score: z.number().nullable(),
             feedback: z.string().nullable(),
             createdAt: z.string()
-          })
+          }),
+          404: errorResponseSchema,
+          500: errorResponseSchema
         }
       }
     },
     async (request, reply) => {
-      const conversation = await prisma.conversation.update({
-        where: { id: request.params.id },
-        data: { transcript: request.body.transcript }
-      });
+      try {
+        const conversation = await prisma.conversation.findUnique({
+          where: { id: request.params.id }
+        });
 
-      return reply.send(formatConversation(conversation));
+        if (!conversation) {
+          return sendErrorResponse(
+            reply,
+            404,
+            'conversation.not_found',
+            'Conversation not found',
+            { conversationId: request.params.id }
+          );
+        }
+
+        const updatedConversation = await prisma.conversation.update({
+          where: { id: request.params.id },
+          data: { transcript: request.body.transcript }
+        });
+
+        return reply.send(formatConversation(updatedConversation));
+      } catch (err) {
+        request.log.error({ err, route: 'conversation:updateTranscript' });
+
+        const message =
+          err instanceof Error ? err.message : 'Failed to update conversation transcript';
+
+        return sendErrorResponse(reply, 500, 'conversation.transcript_update_failed', message, {
+          conversationId: request.params.id
+        });
+      }
     }
   );
 
@@ -86,20 +112,38 @@ export async function conversationRoutes(app: FastifyInstance) {
             score: z.number().nullable(),
             feedback: z.string().nullable(),
             createdAt: z.string()
-          })
+          }),
+          404: errorResponseSchema,
+          500: errorResponseSchema
         }
       }
     },
     async (request, reply) => {
-      const conversation = await prisma.conversation.findUnique({
-        where: { id: request.params.id }
-      });
+      try {
+        const conversation = await prisma.conversation.findUnique({
+          where: { id: request.params.id }
+        });
 
-      if (!conversation) {
-        return reply.notFound('Conversation not found');
+        if (!conversation) {
+          return sendErrorResponse(
+            reply,
+            404,
+            'conversation.not_found',
+            'Conversation not found',
+            { conversationId: request.params.id }
+          );
+        }
+
+        return reply.send(formatConversation(conversation));
+      } catch (err) {
+        request.log.error({ err, route: 'conversation:get' });
+
+        const message = err instanceof Error ? err.message : 'Failed to fetch conversation';
+
+        return sendErrorResponse(reply, 500, 'conversation.fetch_failed', message, {
+          conversationId: request.params.id
+        });
       }
-
-      return reply.send(formatConversation(conversation));
     }
   );
 }
