@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import { useSimulation } from './hooks/useSimulation';
 import styles from './styles/App.module.css';
+import { AnalyticsDashboard } from './features/analytics/AnalyticsDashboard';
+import { downloadMarkdownReport, downloadPdfReport } from './features/export/reportUtils';
 
 function StatusBadge({ status }: { status: string }) {
   const label = useMemo(() => {
@@ -40,6 +42,7 @@ function App() {
   const {
     audioRef,
     conversationId,
+    conversationDetails,
     endSimulation,
     error,
     fetchTranscript,
@@ -55,6 +58,32 @@ function App() {
 
   const canStart = status === 'idle' || status === 'ended' || status === 'error';
   const canStop = status === 'live';
+
+  const sharedReportData = conversationId && score
+    ? {
+        conversationId,
+        score: score.score,
+        feedback: score.feedback,
+        transcript: transcript ?? conversationDetails?.transcript ?? null,
+        generatedAt: conversationDetails?.createdAt ?? null
+      }
+    : null;
+
+  const handleMarkdownExport = () => {
+    if (!sharedReportData) {
+      return;
+    }
+
+    downloadMarkdownReport(sharedReportData);
+  };
+
+  const handlePdfExport = () => {
+    if (!sharedReportData) {
+      return;
+    }
+
+    downloadPdfReport(sharedReportData);
+  };
 
   return (
     <div className={styles.page}>
@@ -118,8 +147,30 @@ function App() {
             <div className={styles.scorePanel}>
               <div className={styles.scoreValue}>{score.score}</div>
               <p>{score.feedback}</p>
+              <div className={styles.exportActions}>
+                <button
+                  type="button"
+                  className={styles.secondaryButton}
+                  onClick={handleMarkdownExport}
+                  disabled={!sharedReportData}
+                >
+                  Markdown exportieren
+                </button>
+                <button
+                  type="button"
+                  className={styles.secondaryButton}
+                  onClick={handlePdfExport}
+                  disabled={!sharedReportData}
+                >
+                  PDF exportieren
+                </button>
+              </div>
             </div>
           )}
+        </section>
+
+        <section className={`${styles.card} ${styles.fullWidthCard}`}>
+          <AnalyticsDashboard />
         </section>
       </main>
     </div>

@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { API_HEADERS } from '../utils/api';
 
 type SimulationStatus = 'idle' | 'starting' | 'live' | 'ended' | 'error';
 
@@ -15,10 +16,6 @@ type ConversationPayload = {
   createdAt: string;
 };
 
-const API_HEADERS = import.meta.env.VITE_API_KEY
-  ? { 'x-api-key': import.meta.env.VITE_API_KEY as string }
-  : undefined;
-
 export const useSimulation = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
@@ -30,6 +27,7 @@ export const useSimulation = () => {
   const [transcript, setTranscript] = useState<string | null>(null);
   const [score, setScore] = useState<ScoreResponse | null>(null);
   const [transcriptDraft, setTranscriptDraft] = useState('');
+  const [conversationDetails, setConversationDetails] = useState<ConversationPayload | null>(null);
 
   const cleanupMedia = useCallback(() => {
     peerConnectionRef.current?.getSenders().forEach((sender) => sender.track?.stop());
@@ -58,6 +56,9 @@ export const useSimulation = () => {
 
       const startPayload: { conversationId: string } = await startResponse.json();
       setConversationId(startPayload.conversationId);
+      setConversationDetails((previous) =>
+        previous?.id === startPayload.conversationId ? previous : null
+      );
 
       const tokenResponse = await fetch('/api/token', {
         method: 'POST',
@@ -89,7 +90,7 @@ export const useSimulation = () => {
         }
       });
 
-      const offer = await pc.createOffer({ offerToReceiveAudio: true, voiceActivityDetection: true });
+      const offer = await pc.createOffer({ offerToReceiveAudio: true });
       await pc.setLocalDescription(offer);
 
       const sdpResponse = await fetch('/api/realtime/session', {
@@ -147,6 +148,7 @@ export const useSimulation = () => {
     const payload = (await response.json()) as ConversationPayload;
     setTranscript(payload.transcript);
     setTranscriptDraft('');
+    setConversationDetails(payload);
   }, [conversationId, transcriptDraft]);
 
   const fetchTranscript = useCallback(async () => {
@@ -165,6 +167,7 @@ export const useSimulation = () => {
 
     const payload = (await response.json()) as ConversationPayload;
     setTranscript(payload.transcript);
+    setConversationDetails(payload);
     if (payload.score !== null && payload.feedback !== null) {
       setScore({ score: payload.score, feedback: payload.feedback });
     }
@@ -190,11 +193,17 @@ export const useSimulation = () => {
 
     const payload = (await response.json()) as ScoreResponse & { conversationId: string };
     setScore({ score: payload.score, feedback: payload.feedback });
+    setConversationDetails((previous) =>
+      previous && previous.id === payload.conversationId
+        ? { ...previous, score: payload.score, feedback: payload.feedback }
+        : previous
+    );
   }, [conversationId]);
 
   return {
     audioRef,
     conversationId,
+    conversationDetails,
     endSimulation,
     error,
     fetchTranscript,
