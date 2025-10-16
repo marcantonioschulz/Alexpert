@@ -1,8 +1,10 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import fetch from 'node-fetch';
-import { env } from '../lib/env.js';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
+import { env } from '../lib/env.js';
+import { ServiceError } from '../services/errors.js';
+import { createEphemeralToken } from '../services/tokenService.js';
 
 export async function tokenRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
@@ -26,37 +28,30 @@ export async function tokenRoutes(app: FastifyInstance) {
       }
     },
     async (request, reply) => {
-      const model = request.body?.model ?? env.REALTIME_MODEL;
+      try {
+        const result = await createEphemeralToken(
+          {
+            fetch: fetch as unknown as typeof globalThis.fetch,
+            env: {
+              OPENAI_API_KEY: env.OPENAI_API_KEY,
+              REALTIME_MODEL: env.REALTIME_MODEL
+            }
+          },
+          request.body ?? {}
+        );
 
-      const response = await fetch('https://api.openai.com/v1/realtime/sessions', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${env.OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
-          'OpenAI-Beta': 'realtime=v1'
-        },
-        body: JSON.stringify({ model })
-      });
+        return reply.send({
+          token: result.token,
+          expires_in: result.expiresIn
+        });
+      } catch (error) {
+        if (error instanceof ServiceError) {
+          request.log.error(error, 'Failed to create ephemeral token');
+          return reply.status(500).send({ message: error.message });
+        }
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        request.log.error({ errorText }, 'Failed to create ephemeral token');
-        return reply.status(500).send({ message: 'Failed to create ephemeral token' });
+        throw error;
       }
-
-      const payload = (await response.json()) as {
-        client_secret: {
-          value: string;
-          expires_at: number;
-        };
-      };
-
-      const expiresIn = Math.max(0, Math.floor(payload.client_secret.expires_at - Date.now() / 1000));
-
-      return reply.send({
-        token: payload.client_secret.value,
-        expires_in: expiresIn
-      });
     }
   );
 }
