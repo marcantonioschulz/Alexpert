@@ -33,20 +33,47 @@ const buildServer = () => {
   app.register(sensible);
 
   app.setErrorHandler((error, request, reply) => {
-    request.log.error(error, 'Unhandled error');
-
     const statusCode = error.statusCode ?? 500;
     const isProd = env.APP_ENV === 'prod';
-    const showOriginalMessage = statusCode < 500 || !isProd;
-    const message = showOriginalMessage ? error.message : 'Internal server error';
+    const code = `ERR_${statusCode}`;
+    const rawMessage =
+      error instanceof Error
+        ? error.message
+        : typeof error === 'string'
+          ? error
+          : undefined;
+    const sanitizedMessage =
+      statusCode >= 500 && isProd
+        ? 'Internal server error'
+        : rawMessage && rawMessage.trim().length > 0
+          ? rawMessage
+          : 'Unexpected error';
+    const context = isProd
+      ? undefined
+      : {
+          requestId: request.id,
+          method: request.method,
+          url: request.url,
+          statusCode,
+          params: request.params,
+          query: request.query
+        };
 
-    const response: Record<string, unknown> = {
-      error: message
+    request.log.error(
+      {
+        code,
+        err: error,
+        statusCode,
+        ...(context ? { context } : {})
+      },
+      'Unhandled error'
+    );
+
+    const response: ErrorResponse = {
+      code,
+      message: sanitizedMessage,
+      ...(context ? { context } : {})
     };
-
-    if (!isProd && error.stack) {
-      response.stack = error.stack;
-    }
 
     reply.status(statusCode).send(response);
   });
