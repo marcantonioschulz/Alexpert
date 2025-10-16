@@ -9,7 +9,7 @@ import { tokenRoutes } from './routes/token.js';
 import { realtimeRoutes } from './routes/realtime.js';
 import { scoreRoutes } from './routes/score.js';
 
-const buildServer = () => {
+export const buildServer = () => {
   const app = Fastify({
     logger: true
   });
