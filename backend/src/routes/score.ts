@@ -4,6 +4,7 @@ import { z } from 'zod';
 import fetch from 'node-fetch';
 import { env } from '../lib/env.js';
 import { prisma } from '../lib/prisma.js';
+import { openAIRequestCounter, openAITokenCounter } from '../lib/metrics.js';
 
 const systemPrompt = `Bewerte dieses Verkaufsgespräch nach Klarheit, Bedarfsermittlung, Einwandbehandlung.
 Antworte ausschließlich als JSON im Format {"score": number, "feedback": string}.`;
@@ -81,6 +82,11 @@ export async function scoreRoutes(app: FastifyInstance) {
         })
       });
 
+      openAIRequestCounter.inc({
+        endpoint: 'responses',
+        status: response.ok ? 'success' : 'error'
+      });
+
       if (!response.ok) {
         const errorText = await response.text();
         request.log.error({ errorText }, 'Failed to fetch score from OpenAI');
@@ -102,6 +108,11 @@ export async function scoreRoutes(app: FastifyInstance) {
         payload.output?.[0]?.content?.[0]?.text ??
         payload.content?.[0]?.text ??
         '';
+
+      const usage = (payload as { usage?: { total_tokens?: number } }).usage;
+      if (usage?.total_tokens) {
+        openAITokenCounter.inc({ endpoint: 'responses' }, usage.total_tokens);
+      }
 
       let parsed: { score: number; feedback: string } | null = null;
 

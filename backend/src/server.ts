@@ -4,6 +4,7 @@ import cors from '@fastify/cors';
 import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
 import { env } from './lib/env.js';
 import { prisma } from './lib/prisma.js';
+import { metricsPlugin } from './plugins/metrics.js';
 import { conversationRoutes } from './routes/conversation.js';
 import { tokenRoutes } from './routes/token.js';
 import { realtimeRoutes } from './routes/realtime.js';
@@ -30,6 +31,7 @@ const buildServer = () => {
 
   app.register(cors, { origin: originConfig });
   app.register(sensible);
+  app.register(metricsPlugin);
 
   app.setErrorHandler((error, request, reply) => {
     request.log.error(error, 'Unhandled error');
