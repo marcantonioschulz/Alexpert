@@ -1,0 +1,20 @@
+{
+  "$schema": "https://raw.githubusercontent.com/openai/codex-config/main/schema.json",
+  "workspace": {
+    "ignoreFile": ".codexignore"
+  },
+  "runtimes": {
+    "node": {
+      "version": "20.16.0"
+    },
+    "python": {
+      "version": "3.11"
+    }
+  },
+  "setup": [
+    {
+      "name": "Install project dependencies",
+      "command": "./scripts/codex/setup.sh"
+    }
+  ]
+}
