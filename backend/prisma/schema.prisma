@@ -14,6 +14,24 @@ model Conversation {
   score      Int?
   feedback   String?
   createdAt  DateTime @default(now())
+  logs       ConversationLog[]
+}
+
+enum ConversationLogType {
+  TRANSCRIPT
+  AI_FEEDBACK
+  SCORING_CONTEXT
+}
+
+model ConversationLog {
+  id              String               @id @default(cuid())
+  conversation    Conversation         @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId  String
+  role            String
+  type            ConversationLogType
+  content         String
+  context         Json?
+  createdAt       DateTime             @default(now())
 }
 
 model UserPreference {

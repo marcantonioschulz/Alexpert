@@ -1,0 +1,99 @@
+{
+  "id": null,
+  "uid": "backend-observability",
+  "title": "Backend Observability",
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "style": "dark",
+  "tags": ["fastify", "openai"],
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "templating": {
+    "list": []
+  },
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "HTTP P95 Latency",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 9 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(fastify_request_duration_seconds_bucket[$__rate_interval])) by (le))",
+          "legendFormat": "P95 latency",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "HTTP Error Rate",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 9 },
+      "targets": [
+        {
+          "expr": "sum(rate(fastify_request_errors_total[$__rate_interval]))",
+          "legendFormat": "Errors / s",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "req/s",
+          "color": { "mode": "fixed", "fixedColor": "red" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "OpenAI Token Consumption",
+      "gridPos": { "x": 0, "y": 9, "w": 24, "h": 9 },
+      "targets": [
+        {
+          "expr": "sum(rate(openai_tokens_total[$__rate_interval]))",
+          "legendFormat": "Tokens / s",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(openai_requests_total{status=\"success\"}[$__rate_interval]))",
+          "legendFormat": "Successful requests",
+          "refId": "B"
+        },
+        {
+          "expr": "sum(rate(openai_requests_total{status=\"error\"}[$__rate_interval]))",
+          "legendFormat": "Failed requests",
+          "refId": "C"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      }
+    }
+  ]
+}

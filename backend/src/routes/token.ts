@@ -1,7 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import fetch from 'node-fetch';
-import { env } from '../lib/env.js';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { getUserPreferences, resolveOpenAIKey } from '../lib/preferences.js';
 
@@ -21,9 +20,7 @@ export async function tokenRoutes(app: FastifyInstance) {
             token: z.string(),
             expires_in: z.number()
           }),
-          500: z.object({
-            message: z.string()
-          })
+          500: errorResponseSchema
         }
       }
     },
@@ -43,25 +40,8 @@ export async function tokenRoutes(app: FastifyInstance) {
         body: JSON.stringify({ model })
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        request.log.error({ errorText }, 'Failed to create ephemeral token');
-        return reply.status(500).send({ message: 'Failed to create ephemeral token' });
+        throw error;
       }
-
-      const payload = (await response.json()) as {
-        client_secret: {
-          value: string;
-          expires_at: number;
-        };
-      };
-
-      const expiresIn = Math.max(0, Math.floor(payload.client_secret.expires_at - Date.now() / 1000));
-
-      return reply.send({
-        token: payload.client_secret.value,
-        expires_in: expiresIn
-      });
     }
   );
 }

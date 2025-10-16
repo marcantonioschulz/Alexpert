@@ -19,7 +19,7 @@ export async function realtimeRoutes(app: FastifyInstance) {
         }),
         response: {
           200: z.object({ sdp: z.string() }),
-          500: z.object({ message: z.string() })
+          500: errorResponseSchema
         }
       }
     },
@@ -39,14 +39,19 @@ export async function realtimeRoutes(app: FastifyInstance) {
         body: request.body.sdp
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        request.log.error({ errorText }, 'Failed to negotiate WebRTC session');
-        return reply.status(500).send({ message: 'Realtime negotiation failed' });
-      }
+        if (!response.ok) {
+          const errorText = await response.text();
+          request.log.error({ err: errorText, route: 'realtime:session', status: response.status });
+          return sendErrorResponse(reply, 500, 'realtime.session_failed', 'Realtime negotiation failed');
+        }
 
-      const answer = await response.text();
-      return reply.send({ sdp: answer });
+        const answer = await response.text();
+        return reply.send({ sdp: answer });
+      } catch (err) {
+        request.log.error({ err, route: 'realtime:session' });
+        const message = err instanceof Error ? err.message : 'Realtime negotiation failed';
+        return sendErrorResponse(reply, 500, 'realtime.session_failed', message);
+      }
     }
   );
 }

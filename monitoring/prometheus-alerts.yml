@@ -1,0 +1,33 @@
+groups:
+  - name: fastify-alerts
+    rules:
+      - alert: HighErrorRate
+        expr: sum(rate(fastify_request_errors_total[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "HTTP 5xx rate is elevated"
+          description: |
+            The backend has returned more than 0.1 errors per second over the last 5 minutes.
+            Investigate recent deployments and upstream dependencies.
+      - alert: ElevatedLatencyP95
+        expr: histogram_quantile(0.95, sum(rate(fastify_request_duration_seconds_bucket[5m])) by (le)) > 2
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "P95 latency above 2 seconds"
+          description: |
+            95th percentile HTTP latency exceeded 2 seconds for the last 10 minutes.
+            Check database load and OpenAI response times.
+      - alert: OpenAITokenSpike
+        expr: rate(openai_tokens_total[30m]) > 500
+        for: 10m
+        labels:
+          severity: info
+        annotations:
+          summary: "OpenAI token consumption spiked"
+          description: |
+            The service is consuming more than 500 tokens per second on average.
+            Validate if the increased usage is expected.
