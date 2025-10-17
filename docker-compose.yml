@@ -46,12 +46,12 @@ services:
       APP_ENV: ${APP_ENV:-prod}
       VITE_API_KEY: ${API_KEY:-super-secret-key}
       VITE_ALLOWED_HOSTS: ${VITE_ALLOWED_HOSTS:-localhost}
-      VITE_BACKEND_URL: ${VITE_BACKEND_URL:-http://backend:4000}
+      VITE_BACKEND_URL: http://sales-simulation-backend:4000
       VITE_HOST: ${VITE_HOST:-0.0.0.0}
       VITE_PORT: ${VITE_PORT:-3000}
     ports:
       - '${VITE_PORT:-3000}:${VITE_PORT:-3000}'
-    command: sh -c "npm ci && npm run build && npx serve -s dist"
+    command: npm run dev
     networks:
       - frontend
 

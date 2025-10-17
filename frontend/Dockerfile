@@ -10,6 +10,4 @@ COPY index.html ./
 COPY src ./src
 
 EXPOSE 3000
-COPY .env .
-RUN npm run build && npm install -g serve
-CMD ["serve", "-s", "dist", "-l", "3000"]
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3000"]
