@@ -89,15 +89,7 @@ export async function conversationRoutes(app: FastifyInstance) {
           );
         }
 
-        const serializedConversation: ConversationDto = {
-          id: conversation.id,
-          transcript: conversation.transcript,
-          score: conversation.score,
-          feedback: conversation.feedback,
-          createdAt: conversation.createdAt.toISOString()
-        };
-
-        return reply.send(serializedConversation);
+        return reply.send(conversation);
       } catch (err) {
         request.log.error({ err, route: 'conversation:updateTranscript' });
 
