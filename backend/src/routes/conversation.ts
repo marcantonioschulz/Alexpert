@@ -1,11 +1,14 @@
 import type { FastifyInstance } from 'fastify';
-import type { PrismaClient } from '@prisma/client';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { env } from '../lib/env.js';
 import { prisma } from '../lib/prisma.js';
 import { ServiceError } from '../services/errors.js';
-import { createConversation, getConversation } from '../services/conversationService.js';
+import {
+  createConversation,
+  getConversation,
+  persistConversationTranscript
+} from '../services/conversationService.js';
 import { ConversationLogType, type ConversationDto } from '../types/index.js';
 import {
   errorResponseSchema,
@@ -70,23 +73,11 @@ export async function conversationRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const conversation = await prisma.$transaction(async (tx: PrismaClient) => {
-          const updatedConversation = await tx.conversation.update({
-            where: { id: request.params.id },
-            data: { transcript: request.body.transcript }
-          });
-
-          await tx.conversationLog.create({
-            data: {
-              conversationId: updatedConversation.id,
-              role: 'user',
-              type: ConversationLogType.TRANSCRIPT,
-              content: request.body.transcript
-            }
-          });
-
-          return updatedConversation;
-        });
+        const conversation = await persistConversationTranscript(
+          prisma,
+          request.params.id,
+          request.body.transcript
+        );
 
         if (!conversation) {
           return sendErrorResponse(
