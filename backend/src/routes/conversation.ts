@@ -5,11 +5,7 @@ import { z } from 'zod';
 import { env } from '../lib/env.js';
 import { prisma } from '../lib/prisma.js';
 import { ServiceError } from '../services/errors.js';
-import {
-  createConversation,
-  getConversation,
-  updateConversationTranscript
-} from '../services/conversationService.js';
+import { createConversation, getConversation } from '../services/conversationService.js';
 import {
   errorResponseSchema,
   sendErrorResponse,
@@ -136,25 +132,41 @@ export async function conversationRoutes(app: FastifyInstance) {
                 createdAt: z.string()
               })
             )
-          })
+          }),
+          500: errorResponseSchema
         }
       }
     },
     async (request, reply) => {
       try {
-        const conversation = await updateConversationTranscript(
-          prisma,
-          request.params.id,
-          request.body.transcript
-        );
+        const logs = await prisma.conversationLog.findMany({
+          where: {
+            conversationId: request.params.id,
+            ...(request.query.type ? { type: request.query.type } : {})
+          },
+          orderBy: { createdAt: 'asc' }
+        });
 
-        return reply.send(conversation);
-      } catch (error) {
-        if (error instanceof ServiceError && error.code === 'NOT_FOUND') {
-          return reply.notFound('Conversation not found');
-        }
+        return reply.send({
+          logs: logs.map((log) => ({
+            id: log.id,
+            conversationId: log.conversationId,
+            role: log.role,
+            type: log.type,
+            content: log.content,
+            context: log.context ?? null,
+            createdAt: log.createdAt.toISOString()
+          }))
+        });
+      } catch (err) {
+        request.log.error({ err, route: 'conversation:getLogs' });
 
-        throw error;
+        const message =
+          err instanceof Error ? err.message : 'Failed to fetch conversation logs';
+
+        return sendErrorResponse(reply, 500, 'conversation.logs_fetch_failed', message, {
+          conversationId: request.params.id
+        });
       }
     }
   );
