@@ -83,14 +83,18 @@ export async function fetchDailyTrends(days: number): Promise<AnalyticsDailyTren
   const startDate = new Date(today.getTime());
   startDate.setDate(startDate.getDate() - (boundedDays - 1));
 
-  const conversations = await prisma.conversation.findMany({
+  const conversations = (await prisma.conversation.findMany({
     where: {
       createdAt: {
         gte: startDate
       }
     },
-    orderBy: { createdAt: 'asc' }
-  });
+    orderBy: { createdAt: 'asc' },
+    select: {
+      createdAt: true,
+      score: true
+    }
+  })) as Array<{ createdAt: Date; score: number | null }>;
 
   const dayMap = new Map<string, { date: string; conversations: number; scoreSum: number; scoredCount: number }>();
 
@@ -129,10 +133,10 @@ export async function fetchDailyTrends(days: number): Promise<AnalyticsDailyTren
 }
 
 export async function fetchScoreDistribution(): Promise<ScoreDistributionBucket[]> {
-  const scoredConversations = await prisma.conversation.findMany({
+  const scoredConversations = (await prisma.conversation.findMany({
     where: { score: { not: null } },
     select: { score: true }
-  });
+  })) as Array<{ score: number | null }>;
 
   const buckets = SCORE_BUCKETS.map((bucket) => ({ ...bucket, count: 0 }));
 
