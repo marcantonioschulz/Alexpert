@@ -6,6 +6,7 @@ import { env } from '../lib/env.js';
 import { prisma } from '../lib/prisma.js';
 import { ServiceError } from '../services/errors.js';
 import { createConversation, getConversation } from '../services/conversationService.js';
+import type { ConversationDto } from '../types/index.js';
 import {
   errorResponseSchema,
   sendErrorResponse,

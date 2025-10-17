@@ -1,14 +1,19 @@
-import type { ErrorOptions } from 'node:errors';
-
 export type ServiceErrorCode = 'BAD_REQUEST' | 'NOT_FOUND' | 'UPSTREAM_ERROR';
+
+export type ServiceErrorOptions = {
+  cause?: unknown;
+};
 
 export class ServiceError extends Error {
   constructor(
     public readonly code: ServiceErrorCode,
     message: string,
-    options?: ErrorOptions
+    options?: ServiceErrorOptions
   ) {
-    super(message, options);
+    super(message);
+    if (options?.cause !== undefined) {
+      this.cause = options.cause;
+    }
     this.name = 'ServiceError';
   }
 }

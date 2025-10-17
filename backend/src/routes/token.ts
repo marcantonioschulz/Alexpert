@@ -6,6 +6,11 @@ import { env } from '../lib/env.js';
 import { getUserPreferences, resolveOpenAIKey } from '../lib/preferences.js';
 import { errorResponseSchema, sendErrorResponse } from './error-response.js';
 
+const sessionResponseSchema = z.object({
+  token: z.string(),
+  expires_in: z.number()
+});
+
 export async function tokenRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
     '/api/token',
@@ -49,7 +54,7 @@ export async function tokenRoutes(app: FastifyInstance) {
           return sendErrorResponse(reply, 500, 'token.create_failed', 'Failed to create realtime token');
         }
 
-        const payload = await response.json();
+        const payload = sessionResponseSchema.parse(await response.json());
         return reply.send(payload);
       } catch (error) {
         request.log.error({ err: error, route: 'token:create' });
