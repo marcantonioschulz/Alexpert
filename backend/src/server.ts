@@ -11,6 +11,7 @@ import { tokenRoutes } from './routes/token.js';
 import { realtimeRoutes } from './routes/realtime.js';
 import { scoreRoutes } from './routes/score.js';
 import { preferencesRoutes } from './routes/preferences.js';
+import { promptRoutes } from './routes/prompts.js';
 import type { ErrorResponse } from './routes/error-response.js';
 
 export const buildServer = () => {
@@ -103,6 +104,7 @@ export const buildServer = () => {
   app.register(realtimeRoutes);
   app.register(scoreRoutes);
   app.register(preferencesRoutes);
+  app.register(promptRoutes);
 
   return app;
 };

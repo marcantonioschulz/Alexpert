@@ -21,23 +21,11 @@ try {
 
 const describeIfRuntime = runtimeAvailable ? describe : describe.skip;
 
+const fetchMock = vi.fn();
+
 vi.mock('node-fetch', () => ({
   __esModule: true,
-  default: vi.fn(async () => ({
-    ok: true,
-    json: async () => ({
-      output: [
-        {
-          content: [
-            {
-              text: '{"score": 92, "feedback": "Great job"}'
-            }
-          ]
-        }
-      ]
-    }),
-    text: async () => 'ok'
-  }))
+  default: fetchMock
 }));
 
 describeIfRuntime('sales simulation API', () => {
@@ -47,6 +35,54 @@ describeIfRuntime('sales simulation API', () => {
   let request: SuperTest<Test>;
 
   beforeAll(async () => {
+    fetchMock.mockImplementation(async (url: string) => {
+      if (typeof url === 'string' && url.includes('/realtime')) {
+        return {
+          ok: true,
+          status: 200,
+          text: async () => 'v=0\no=- 0 0 IN IP4 127.0.0.1',
+          json: async () => ({})
+        };
+      }
+
+      if (typeof url === 'string' && url.includes('/responses')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            output: [
+              {
+                content: [
+                  {
+                    text: '{"score": 92, "feedback": "Great job"}'
+                  }
+                ]
+              }
+            ]
+          }),
+          text: async () =>
+            JSON.stringify({
+              output: [
+                {
+                  content: [
+                    {
+                      text: '{"score": 92, "feedback": "Great job"}'
+                    }
+                  ]
+                }
+              ]
+            })
+        };
+      }
+
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({}),
+        text: async () => ''
+      };
+    });
+
     container = await new PostgreSqlContainer('postgres:16')
       .withDatabase('testdb')
       .withUsername('test')
@@ -77,7 +113,7 @@ describeIfRuntime('sales simulation API', () => {
     request = supertest(app.server);
   }, 60000);
 
-  it('creates a conversation and persists transcript and score', async () => {
+  it('creates a conversation, negotiates realtime session and persists transcript and score', async () => {
     const startResponse = await request
       .post('/api/start')
       .set('x-api-key', 'integration-key')
@@ -87,19 +123,24 @@ describeIfRuntime('sales simulation API', () => {
     expect(conversationId).toBeTruthy();
 
     await request
-      .post(`/api/conversation/${conversationId}/transcript`)
+      .post('/api/realtime/session')
+      .set('x-api-key', 'integration-key')
+      .send({
+        sdp: 'v=0',
+        conversationId,
+        token: 'integration-openai'
+      })
+      .expect(200);
+
+    const finalizeResponse = await request
+      .post(`/api/realtime/${conversationId}/finalize`)
       .set('x-api-key', 'integration-key')
       .send({ transcript: 'Hello there' })
       .expect(200);
 
-    const scoreResponse = await request
-      .post('/api/score')
-      .set('x-api-key', 'integration-key')
-      .send({ conversationId })
-      .expect(200);
-
-    expect(scoreResponse.body).toMatchObject({
+    expect(finalizeResponse.body).toMatchObject({
       conversationId,
+      transcript: 'Hello there',
       score: 92,
       feedback: 'Great job'
     });
@@ -115,6 +156,13 @@ describeIfRuntime('sales simulation API', () => {
       score: 92,
       feedback: 'Great job'
     });
+
+    const promptsResponse = await request
+      .get('/api/admin/prompts')
+      .set('x-api-key', 'integration-key')
+      .expect(200);
+
+    expect(Array.isArray(promptsResponse.body.prompts)).toBe(true);
   });
 
   afterAll(async () => {

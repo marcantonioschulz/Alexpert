@@ -14,6 +14,8 @@ export interface OpenAIRequestOptions {
   timeoutMs?: number;
   /** Whether we expect a streaming response */
   stream?: boolean;
+  /** Optional API key override */
+  apiKeyOverride?: string;
 }
 
 export interface ResponsesPayload {
@@ -56,6 +58,7 @@ export class OpenAIClient {
     const retries = options.retries ?? DEFAULT_MAX_RETRIES;
     const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     const stream = options.stream ?? body.stream ?? false;
+    const apiKey = options.apiKeyOverride ?? this.apiKey;
 
     let attempt = 0;
     let lastError: unknown = null;
@@ -68,7 +71,7 @@ export class OpenAIClient {
           {
             method: 'POST',
             headers: {
-              Authorization: `Bearer ${this.apiKey}`,
+              Authorization: `Bearer ${apiKey}`,
               'Content-Type': 'application/json',
               ...(stream ? { Accept: 'text/event-stream' } : {})
             },
