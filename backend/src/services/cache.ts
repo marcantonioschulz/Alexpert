@@ -56,6 +56,15 @@ class CacheClient {
     }
   }
 
+  async del(key: string): Promise<void> {
+    if (!this.client) {
+      return;
+    }
+
+    await this.connect();
+    await this.client.del(key);
+  }
+
   async disconnect(): Promise<void> {
     if (!this.client) {
       return;

@@ -1,6 +1,7 @@
 import type { PrismaClient } from '@prisma/client';
 import type { ConversationDto, ConversationResponse } from '../types/index.js';
 import { ConversationLogType } from '../types/index.js';
+import { clearAnalyticsCache } from './analyticsService.js';
 import { ServiceError } from './errors.js';
 
 type RecordNotFoundError = { code?: unknown };
@@ -31,6 +32,7 @@ export async function createConversation(
     }
   });
 
+  await clearAnalyticsCache();
   return formatConversation(conversation);
 }
 
@@ -45,6 +47,7 @@ export async function updateConversationTranscript(
       data: { transcript }
     });
 
+    await clearAnalyticsCache();
     return formatConversation(conversation);
   } catch (error) {
     if (isRecordNotFoundError(error)) {
@@ -61,8 +64,8 @@ export async function persistConversationTranscript(
   transcript: string
 ): Promise<ConversationDto> {
   try {
-    return await prisma.$transaction(async (tx) => {
-      const conversation = await tx.conversation.update({
+    const conversation = await prisma.$transaction(async (tx) => {
+      const updatedConversation = await tx.conversation.update({
         where: { id },
         data: { transcript }
       });
@@ -76,8 +79,11 @@ export async function persistConversationTranscript(
         }
       });
 
-      return formatConversation(conversation);
+      return updatedConversation;
     });
+
+    await clearAnalyticsCache();
+    return formatConversation(conversation);
   } catch (error) {
     if (isRecordNotFoundError(error)) {
       throw new ServiceError('NOT_FOUND', 'Conversation not found', { cause: error });

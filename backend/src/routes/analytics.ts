@@ -2,12 +2,13 @@ import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import {
-  fetchAnalyticsSummary,
-  fetchDailyTrends,
-  fetchScoreDistribution
-} from '../lib/analytics.js';
+  getAnalyticsSummary,
+  getScoreDistribution,
+  getScoreTrends
+} from '../services/analyticsService.js';
+import { sendErrorResponse } from './error-response.js';
 
-const summarySchema = z.object({
+const summaryDataSchema = z.object({
   totalConversations: z.number(),
   scoredConversations: z.number(),
   averageScore: z.number().nullable(),
@@ -27,20 +28,35 @@ const summarySchema = z.object({
     .nullable()
 });
 
-const trendSchema = z.array(
-  z.object({
-    date: z.string(),
-    conversations: z.number(),
-    averageScore: z.number().nullable()
-  })
-);
+const trendPointSchema = z.object({
+  date: z.string(),
+  conversations: z.number(),
+  averageScore: z.number().nullable()
+});
 
-const distributionSchema = z.array(
+const distributionPointSchema = z.object({
+  range: z.string(),
+  count: z.number()
+});
+
+const baseResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
   z.object({
-    range: z.string(),
-    count: z.number()
-  })
-);
+    success: z.literal(true),
+    data: dataSchema,
+    timestamp: z.string()
+  });
+
+const summaryResponseSchema = baseResponseSchema(summaryDataSchema);
+const trendsResponseSchema = baseResponseSchema(z.array(trendPointSchema));
+const distributionResponseSchema = baseResponseSchema(z.array(distributionPointSchema));
+
+function buildSuccessResponse<T>(data: T) {
+  return {
+    success: true as const,
+    data,
+    timestamp: new Date().toISOString()
+  };
+}
 
 export async function analyticsRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().get(
@@ -48,13 +64,19 @@ export async function analyticsRoutes(app: FastifyInstance) {
     {
       schema: {
         response: {
-          200: summarySchema
+          200: summaryResponseSchema
         }
       }
     },
-    async (_request, reply) => {
-      const summary = await fetchAnalyticsSummary();
-      return reply.send(summary);
+    async (request, reply) => {
+      try {
+        request.log.info('Fetching analytics summary');
+        const summary = await getAnalyticsSummary();
+        return reply.send(buildSuccessResponse(summary));
+      } catch (error) {
+        request.log.error({ err: error }, 'Failed to fetch analytics summary');
+        return sendErrorResponse(reply, 500, 'ANALYTICS_SUMMARY_ERROR', 'Failed to fetch analytics summary');
+      }
     }
   );
 
@@ -68,14 +90,20 @@ export async function analyticsRoutes(app: FastifyInstance) {
           })
           .optional(),
         response: {
-          200: trendSchema
+          200: trendsResponseSchema
         }
       }
     },
     async (request, reply) => {
-      const days = request.query?.days ?? 14;
-      const trend = await fetchDailyTrends(days);
-      return reply.send(trend);
+      try {
+        const days = request.query?.days ?? 14;
+        request.log.info({ days }, 'Fetching analytics trends');
+        const trend = await getScoreTrends(days);
+        return reply.send(buildSuccessResponse(trend));
+      } catch (error) {
+        request.log.error({ err: error }, 'Failed to fetch analytics trends');
+        return sendErrorResponse(reply, 500, 'ANALYTICS_TRENDS_ERROR', 'Failed to fetch analytics trends');
+      }
     }
   );
 
@@ -84,13 +112,19 @@ export async function analyticsRoutes(app: FastifyInstance) {
     {
       schema: {
         response: {
-          200: distributionSchema
+          200: distributionResponseSchema
         }
       }
     },
-    async (_request, reply) => {
-      const distribution = await fetchScoreDistribution();
-      return reply.send(distribution);
+    async (request, reply) => {
+      try {
+        request.log.info('Fetching score distribution');
+        const distribution = await getScoreDistribution();
+        return reply.send(buildSuccessResponse(distribution));
+      } catch (error) {
+        request.log.error({ err: error }, 'Failed to fetch score distribution');
+        return sendErrorResponse(reply, 500, 'ANALYTICS_DISTRIBUTION_ERROR', 'Failed to fetch score distribution');
+      }
     }
   );
 }

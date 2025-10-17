@@ -1,5 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import { ServiceError } from './errors.js';
+import { clearAnalyticsCache } from './analyticsService.js';
 
 const systemPrompt = `Bewerte dieses Verkaufsgespräch nach Klarheit, Bedarfsermittlung, Einwandbehandlung.
 Antworte ausschließlich als JSON im Format {"score": number, "feedback": string}.`;
@@ -138,6 +139,7 @@ export async function scoreConversation(
         }
       });
 
+  await clearAnalyticsCache();
   return {
     conversationId: updatedConversation.id,
     score: boundedScore,
