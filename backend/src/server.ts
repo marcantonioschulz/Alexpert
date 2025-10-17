@@ -4,6 +4,7 @@ import cors from '@fastify/cors';
 import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
 import { env } from './lib/env.js';
 import { prisma } from './lib/prisma.js';
+import { cacheClient } from './services/cache.js';
 import { metricsPlugin } from './plugins/metrics.js';
 import { conversationRoutes } from './routes/conversation.js';
 import { tokenRoutes } from './routes/token.js';
@@ -11,7 +12,6 @@ import { realtimeRoutes } from './routes/realtime.js';
 import { scoreRoutes } from './routes/score.js';
 import { preferencesRoutes } from './routes/preferences.js';
 import type { ErrorResponse } from './routes/error-response.js';
-import { cacheClient } from './services/cache.js';
 
 export const buildServer = () => {
   const app = Fastify({
