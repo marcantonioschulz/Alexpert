@@ -12,6 +12,7 @@ import { realtimeRoutes } from './routes/realtime.js';
 import { scoreRoutes } from './routes/score.js';
 import { preferencesRoutes } from './routes/preferences.js';
 import { promptRoutes } from './routes/prompts.js';
+import { analyticsRoutes } from './routes/analytics.js';
 import type { ErrorResponse } from './routes/error-response.js';
 
 export const buildServer = () => {
@@ -105,6 +106,7 @@ export const buildServer = () => {
   app.register(scoreRoutes);
   app.register(preferencesRoutes);
   app.register(promptRoutes);
+  app.register(analyticsRoutes);
 
   return app;
 };

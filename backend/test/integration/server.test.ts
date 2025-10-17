@@ -163,6 +163,81 @@ describeIfRuntime('sales simulation API', () => {
       .expect(200);
 
     expect(Array.isArray(promptsResponse.body.prompts)).toBe(true);
+
+    const summaryResponse = await request
+      .get('/api/analytics/summary')
+      .set('x-api-key', 'integration-key')
+      .expect(200);
+
+    expect(summaryResponse.body).toMatchObject({
+      success: true,
+      data: {
+        totalConversations: 1,
+        scoredConversations: 1,
+        averageScore: 92,
+        lastSevenDays: 1,
+        bestScore: { score: 92 },
+        lowestScore: { score: 92 }
+      }
+    });
+
+    const trendsResponse = await request
+      .get('/api/analytics/trends?days=5')
+      .set('x-api-key', 'integration-key')
+      .expect(200);
+
+    expect(trendsResponse.body.success).toBe(true);
+    expect(Array.isArray(trendsResponse.body.data)).toBe(true);
+    expect(trendsResponse.body.data.length).toBe(5);
+
+    const distributionResponse = await request
+      .get('/api/analytics/score-distribution')
+      .set('x-api-key', 'integration-key')
+      .expect(200);
+
+    expect(distributionResponse.body.success).toBe(true);
+    expect(
+      distributionResponse.body.data.some(
+        (bucket: { range: string; count: number }) => bucket.range === '81-100' && bucket.count === 1
+      )
+    ).toBe(true);
+
+    const preferencesResponse = await request
+      .get('/api/user/preferences?userId=integration-user')
+      .set('x-api-key', 'integration-key')
+      .expect(200);
+
+    expect(preferencesResponse.body).toMatchObject({
+      success: true,
+      data: {
+        userId: 'integration-user',
+        realtimeModel: 'test-realtime',
+        responsesModel: 'test-responses',
+        theme: 'system'
+      }
+    });
+
+    const savePreferencesResponse = await request
+      .post('/api/user/preferences')
+      .set('x-api-key', 'integration-key')
+      .send({
+        userId: 'integration-user',
+        realtimeModel: 'updated-realtime',
+        responsesModel: 'updated-responses',
+        apiKeyOverride: null,
+        theme: 'dark'
+      })
+      .expect(200);
+
+    expect(savePreferencesResponse.body).toMatchObject({
+      success: true,
+      data: {
+        userId: 'integration-user',
+        realtimeModel: 'updated-realtime',
+        responsesModel: 'updated-responses',
+        theme: 'dark'
+      }
+    });
   });
 
   afterAll(async () => {

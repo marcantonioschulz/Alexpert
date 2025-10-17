@@ -1,9 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ThemePreference, UserPreferences } from '../types/preferences';
-
-const API_HEADERS = import.meta.env.VITE_API_KEY
-  ? { 'x-api-key': import.meta.env.VITE_API_KEY as string }
-  : undefined;
+import { API_HEADERS, type ApiResponse } from '../utils/api';
 
 const DEFAULT_THEME: ThemePreference = 'system';
 
@@ -39,7 +36,7 @@ export const useUserPreferences = (userId: string) => {
       setError(null);
       try {
         const params = new URLSearchParams({ userId });
-        const response = await fetch(`/api/preferences?${params.toString()}`, {
+        const response = await fetch(`/api/user/preferences?${params.toString()}`, {
           headers: {
             ...(API_HEADERS ?? {})
           }
@@ -49,12 +46,15 @@ export const useUserPreferences = (userId: string) => {
           throw new Error('Einstellungen konnten nicht geladen werden.');
         }
 
-        const payload = (await response.json()) as UserPreferences;
+        const payload = (await response.json()) as ApiResponse<UserPreferences>;
+        if (!payload.success) {
+          throw new Error('Einstellungen konnten nicht geladen werden.');
+        }
         if (!isActive) {
           return;
         }
 
-        const normalized = normalize(payload);
+        const normalized = normalize(payload.data);
         setPreferences(normalized);
         setInitialPreferences(normalized);
       } catch (err) {
@@ -97,7 +97,7 @@ export const useUserPreferences = (userId: string) => {
     setError(null);
 
     try {
-      const response = await fetch('/api/preferences', {
+      const response = await fetch('/api/user/preferences', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -113,8 +113,11 @@ export const useUserPreferences = (userId: string) => {
         throw new Error('Einstellungen konnten nicht gespeichert werden.');
       }
 
-      const payload = (await response.json()) as UserPreferences;
-      const normalized = normalize(payload);
+      const payload = (await response.json()) as ApiResponse<UserPreferences>;
+      if (!payload.success) {
+        throw new Error('Einstellungen konnten nicht gespeichert werden.');
+      }
+      const normalized = normalize(payload.data);
       setPreferences(normalized);
       setInitialPreferences(normalized);
     } catch (err) {

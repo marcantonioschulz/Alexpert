@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { API_HEADERS } from '../../utils/api';
+import { API_HEADERS, type ApiResponse } from '../../utils/api';
 import type {
   AnalyticsSummary,
   AnalyticsTrendPoint,
@@ -51,13 +51,23 @@ export function useAnalyticsData(days = 14) {
         throw new Error('Analytics-Daten konnten nicht geladen werden.');
       }
 
-      const [summary, trend, distribution] = await Promise.all([
-        summaryResponse.json() as Promise<AnalyticsSummary>,
-        trendResponse.json() as Promise<AnalyticsTrendPoint[]>,
-        distributionResponse.json() as Promise<ScoreDistributionPoint[]>
+      const [summaryPayload, trendPayload, distributionPayload] = await Promise.all([
+        summaryResponse.json() as Promise<ApiResponse<AnalyticsSummary>>,
+        trendResponse.json() as Promise<ApiResponse<AnalyticsTrendPoint[]>>,
+        distributionResponse.json() as Promise<ApiResponse<ScoreDistributionPoint[]>>
       ]);
 
-      setState({ summary, trend, distribution, loading: false, error: null });
+      if (!summaryPayload.success || !trendPayload.success || !distributionPayload.success) {
+        throw new Error('Analytics-Daten konnten nicht geladen werden.');
+      }
+
+      setState({
+        summary: summaryPayload.data,
+        trend: trendPayload.data,
+        distribution: distributionPayload.data,
+        loading: false,
+        error: null
+      });
     } catch (error) {
       console.error(error);
       setState((previous) => ({
