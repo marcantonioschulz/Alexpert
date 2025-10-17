@@ -6,6 +6,7 @@ COPY package.json package-lock.json* ./
 RUN npm install
 
 COPY tsconfig.json ./
+COPY tsconfig.build.json ./
 COPY prisma ./prisma
 COPY src ./src
 
