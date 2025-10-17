@@ -1,4 +1,3 @@
-import { Prisma } from '@prisma/client';
 import { describe, expect, it, vi } from 'vitest';
 import {
   createConversation,
@@ -62,12 +61,16 @@ describe('conversationService', () => {
   });
 
   it('throws a ServiceError when update target is missing', async () => {
-    const updateMock = vi.fn().mockRejectedValue(
-      new Prisma.PrismaClientKnownRequestError('not found', {
-        code: 'P2025',
-        clientVersion: '5.22.0'
-      })
-    );
+    class PrismaClientKnownRequestError extends Error {
+      constructor(message: string, public readonly code: string) {
+        super(message);
+        this.name = 'PrismaClientKnownRequestError';
+      }
+    }
+
+    const updateMock = vi
+      .fn()
+      .mockRejectedValue(new PrismaClientKnownRequestError('not found', 'P2025'));
 
     const prisma = {
       conversation: {

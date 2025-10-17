@@ -1,7 +1,17 @@
-import { Prisma } from '@prisma/client';
 import type { PrismaClient } from '@prisma/client';
 import type { ConversationDto, ConversationResponse } from '../types/index.js';
 import { ServiceError } from './errors.js';
+
+type RecordNotFoundError = { code?: unknown };
+
+function isRecordNotFoundError(error: unknown): error is RecordNotFoundError & { code: string } {
+  if (typeof error !== 'object' || error === null) {
+    return false;
+  }
+
+  const candidate = error as RecordNotFoundError;
+  return typeof candidate.code === 'string' && candidate.code === 'P2025';
+}
 
 function formatConversation(conversation: ConversationResponse): ConversationDto {
   return {
@@ -36,7 +46,7 @@ export async function updateConversationTranscript(
 
     return formatConversation(conversation);
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+    if (isRecordNotFoundError(error)) {
       throw new ServiceError('NOT_FOUND', 'Conversation not found', { cause: error });
     }
 

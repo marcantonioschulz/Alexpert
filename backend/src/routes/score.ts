@@ -2,11 +2,11 @@ import type { FastifyBaseLogger, FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import fetch from 'node-fetch';
-import { ConversationLogType } from '@prisma/client';
 import { env } from '../lib/env.js';
 import { prisma } from '../lib/prisma.js';
 import { getUserPreferences, resolveOpenAIKey } from '../lib/preferences.js';
 import { ServiceError } from '../services/errors.js';
+import { ConversationLogType } from '../types/index.js';
 import { errorResponseSchema, sendErrorResponse } from './error-response.js';
 
 const systemPrompt = `Bewerte dieses Verkaufsgespräch nach Klarheit, Bedarfsermittlung, Einwandbehandlung.

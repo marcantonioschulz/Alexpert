@@ -5,6 +5,8 @@ export type ServiceErrorOptions = {
 };
 
 export class ServiceError extends Error {
+  public readonly cause?: unknown;
+
   constructor(
     public readonly code: ServiceErrorCode,
     message: string,

@@ -1,7 +1,27 @@
-import type { Conversation, ConversationLog, UserPreference } from '@prisma/client';
+export enum ConversationLogType {
+  TRANSCRIPT = 'TRANSCRIPT',
+  AI_FEEDBACK = 'AI_FEEDBACK',
+  SCORING_CONTEXT = 'SCORING_CONTEXT'
+}
 
-export type ConversationResponse = Conversation;
-export type ConversationLogResponse = ConversationLog;
+export type ConversationResponse = {
+  id: string;
+  userId: string;
+  transcript: string | null;
+  score: number | null;
+  feedback: string | null;
+  createdAt: Date;
+};
+
+export type ConversationLogResponse = {
+  id: string;
+  conversationId: string;
+  role: string;
+  type: ConversationLogType;
+  content: string;
+  context: unknown | null;
+  createdAt: Date;
+};
 
 export type ConversationDto = {
   id: string;
@@ -11,7 +31,16 @@ export type ConversationDto = {
   createdAt: string;
 };
 
-export type UserPreferenceResponse = UserPreference;
+export type UserPreferenceResponse = {
+  id: number;
+  userId: string;
+  realtimeModel: string | null;
+  responsesModel: string | null;
+  apiKeyOverride: string | null;
+  theme: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 export type ScoreReference = {
   conversationId: string;

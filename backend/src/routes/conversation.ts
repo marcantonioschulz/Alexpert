@@ -1,12 +1,12 @@
 import type { FastifyInstance } from 'fastify';
+import type { PrismaClient } from '@prisma/client';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
-import { ConversationLogType } from '@prisma/client';
 import { z } from 'zod';
 import { env } from '../lib/env.js';
 import { prisma } from '../lib/prisma.js';
 import { ServiceError } from '../services/errors.js';
 import { createConversation, getConversation } from '../services/conversationService.js';
-import type { ConversationDto } from '../types/index.js';
+import { ConversationLogType, type ConversationDto } from '../types/index.js';
 import {
   errorResponseSchema,
   sendErrorResponse,
@@ -70,7 +70,7 @@ export async function conversationRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const conversation = await prisma.$transaction(async (tx) => {
+        const conversation = await prisma.$transaction(async (tx: PrismaClient) => {
           const updatedConversation = await tx.conversation.update({
             where: { id: request.params.id },
             data: { transcript: request.body.transcript }
@@ -148,13 +148,21 @@ export async function conversationRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const logs = await prisma.conversationLog.findMany({
+        const logs = (await prisma.conversationLog.findMany({
           where: {
             conversationId: request.params.id,
             ...(request.query.type ? { type: request.query.type } : {})
           },
           orderBy: { createdAt: 'asc' }
-        });
+        })) as Array<{
+          id: string;
+          conversationId: string;
+          role: string;
+          type: ConversationLogType;
+          content: string;
+          context: unknown | null;
+          createdAt: Date;
+        }>;
 
         return reply.send({
           logs: logs.map((log) => ({
