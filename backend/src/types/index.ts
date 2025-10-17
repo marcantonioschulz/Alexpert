@@ -13,14 +13,19 @@ export type ConversationDto = {
 
 export type UserPreferenceResponse = UserPreference;
 
+export type ScoreReference = {
+  conversationId: string;
+  score: number;
+};
+
 export type AnalyticsSummary = {
   totalConversations: number;
   scoredConversations: number;
   averageScore: number | null;
   lastConversationAt: string | null;
   lastSevenDays: number;
-  bestScore: { conversationId: string; score: number } | null;
-  lowestScore: { conversationId: string; score: number } | null;
+  bestScore: ScoreReference | null;
+  lowestScore: ScoreReference | null;
 };
 
 export type AnalyticsDailyTrend = {
