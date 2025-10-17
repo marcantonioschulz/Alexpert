@@ -10,6 +10,8 @@ import { tokenRoutes } from './routes/token.js';
 import { realtimeRoutes } from './routes/realtime.js';
 import { scoreRoutes } from './routes/score.js';
 import { preferencesRoutes } from './routes/preferences.js';
+import type { ErrorResponse } from './routes/error-response.js';
+import { cacheClient } from './services/cache.js';
 
 export const buildServer = () => {
   const app = Fastify({
