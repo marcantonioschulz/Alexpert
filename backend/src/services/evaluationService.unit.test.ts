@@ -4,11 +4,11 @@ import type { Response } from 'node-fetch';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.hoisted(() => {
-  process.env.API_KEY = 'test-api-key';
   process.env.OPENAI_API_KEY = 'test-openai-key';
   process.env.DATABASE_URL = 'postgresql://user:pass@localhost:5432/db';
   process.env.REALTIME_MODEL = 'test-realtime';
   process.env.RESPONSES_MODEL = 'test-model';
+  process.env.JWT_SECRET = 'test-secret';
 });
 import { parseScorePayload, scoreTranscriptForUser } from './evaluationService.js';
 import { openAIClient } from './openaiClient.js';

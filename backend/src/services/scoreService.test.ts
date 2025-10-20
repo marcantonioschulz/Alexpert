@@ -1,4 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
+
+vi.hoisted(() => {
+  process.env.OPENAI_API_KEY = 'test-openai';
+  process.env.DATABASE_URL = 'postgresql://user:pass@localhost:5432/test';
+  process.env.JWT_SECRET = 'test-secret';
+});
 import { scoreConversation } from './scoreService.js';
 
 const baseEnv = {
