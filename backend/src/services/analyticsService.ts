@@ -78,7 +78,7 @@ async function getOrSetCache<T>(key: string, ttlSeconds: number, fetcher: () => 
         setMemoryCache(key, parsed, ttlSeconds);
         return parsed;
       }
-    } catch (error) {
+    } catch {
       // ignore cache errors to keep API responsive
     }
   }
@@ -89,7 +89,7 @@ async function getOrSetCache<T>(key: string, ttlSeconds: number, fetcher: () => 
     if (cacheClient?.isEnabled()) {
       await cacheClient.set(key, JSON.stringify(value), ttlSeconds);
     }
-  } catch (error) {
+  } catch {
     // ignore cache errors
   }
 

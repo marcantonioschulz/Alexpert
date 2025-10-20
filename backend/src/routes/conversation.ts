@@ -1,7 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
-import { env } from '../lib/env.js';
 import { prisma } from '../lib/prisma.js';
 import { ServiceError } from '../services/errors.js';
 import {
@@ -9,7 +8,7 @@ import {
   getConversation,
   persistConversationTranscript
 } from '../services/conversationService.js';
-import { ConversationLogType, type ConversationDto } from '../types/index.js';
+import { ConversationLogType } from '../types/index.js';
 import {
   errorResponseSchema,
   sendErrorResponse,

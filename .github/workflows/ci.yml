@@ -72,6 +72,7 @@ jobs:
   test:
     name: Test (${{ matrix.project }})
     runs-on: ubuntu-latest
+    environment: TEST_ENV
     needs: lint_build
     strategy:
       fail-fast: false
@@ -120,6 +121,7 @@ jobs:
   docker:
     name: Build & Push Docker image
     runs-on: ubuntu-latest
+    environment: TEST_ENV
     needs:
       - test
     if: github.ref == 'refs/heads/main'
@@ -156,6 +158,7 @@ jobs:
   deploy:
     name: Deploy to Production
     runs-on: ubuntu-latest
+    environment: TEST_ENV
     needs:
       - docker
     if: github.ref == 'refs/heads/main'

@@ -1,3 +1,6 @@
+import type { FastifyBaseLogger } from 'fastify';
+import type { PrismaClient } from '@prisma/client';
+import type { Response } from 'node-fetch';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.hoisted(() => {
@@ -22,8 +25,10 @@ vi.mock('../lib/preferences.js', () => ({
 
 describe('evaluationService', () => {
   it('parses JSON payloads', () => {
-    const logger = { warn: vi.fn() } as unknown as Console;
-    const parsed = parseScorePayload('Antwort: {"score": 88, "feedback": "Nice"}', logger as any);
+    const logger = {
+      warn: vi.fn()
+    } as unknown as FastifyBaseLogger;
+    const parsed = parseScorePayload('Antwort: {"score": 88, "feedback": "Nice"}', logger);
     expect(parsed).toEqual({ score: 88, feedback: 'Nice' });
   });
 
@@ -45,17 +50,25 @@ describe('evaluationService', () => {
       .mockResolvedValue({
         ok: true,
         json: async () => responsePayload
-      } as any);
+      } as unknown as Response);
 
     const logger = {
       warn: vi.fn(),
       error: vi.fn()
-    } as any;
+    } as unknown as FastifyBaseLogger;
 
     const mockPromptClient = {
       promptSetting: {
         findUnique: vi.fn(async () => null),
-        create: vi.fn(async ({ data }: any) => ({
+        create: vi.fn(async ({
+          data
+        }: {
+          data: {
+            key: string;
+            value: string;
+            description?: string | null;
+          };
+        }) => ({
           key: data.key,
           value: data.value,
           description: data.description,
@@ -63,7 +76,7 @@ describe('evaluationService', () => {
           updatedAt: new Date()
         }))
       }
-    } as any;
+    } as unknown as PrismaClient;
 
     const result = await scoreTranscriptForUser({
       prisma: mockPromptClient,
