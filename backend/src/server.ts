@@ -85,7 +85,10 @@ export const buildServer = () => {
   });
 
   app.addHook('onRequest', async (request, reply) => {
-    if (!request.url.startsWith('/api')) {
+    const path = request.url.split('?')[0];
+    const requiresAdminAuth = path.startsWith('/api') || path === '/metrics';
+
+    if (!requiresAdminAuth) {
       return;
     }
 
