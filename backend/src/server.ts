@@ -13,6 +13,8 @@ import { scoreRoutes } from './routes/score.js';
 import { preferencesRoutes } from './routes/preferences.js';
 import { promptRoutes } from './routes/prompts.js';
 import { analyticsRoutes } from './routes/analytics.js';
+import { authRoutes } from './routes/auth.js';
+import { verifyAdminToken } from './services/authService.js';
 import type { ErrorResponse } from './routes/error-response.js';
 
 export const buildServer = () => {
@@ -85,12 +87,30 @@ export const buildServer = () => {
   });
 
   app.addHook('onRequest', async (request, reply) => {
-    if (!request.url.startsWith('/api')) {
+    const routePath = request.url.split('?')[0];
+
+    if (!routePath.startsWith('/api') || request.method === 'OPTIONS') {
       return;
     }
 
-    const apiKey = request.headers['x-api-key'];
-    if (apiKey !== env.API_KEY) {
+    if (routePath === '/api/admin/login' && request.method === 'POST') {
+      return;
+    }
+
+    const authorization = request.headers.authorization;
+    const bearerToken = authorization?.startsWith('Bearer ')
+      ? authorization.slice('Bearer '.length).trim()
+      : undefined;
+
+    if (!bearerToken) {
+      return reply.status(401).send({ message: 'Unauthorized' });
+    }
+
+    try {
+      const payload = verifyAdminToken(bearerToken);
+      request.admin = payload;
+    } catch (error) {
+      request.log.warn({ err: error, route: request.url }, 'Invalid admin token');
       return reply.status(401).send({ message: 'Unauthorized' });
     }
   });
@@ -100,6 +120,7 @@ export const buildServer = () => {
     await cacheClient.disconnect();
   });
 
+  app.register(authRoutes);
   app.register(conversationRoutes);
   app.register(tokenRoutes);
   app.register(realtimeRoutes);

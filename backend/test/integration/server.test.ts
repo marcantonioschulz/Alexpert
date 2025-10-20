@@ -23,6 +23,11 @@ const describeIfRuntime = runtimeAvailable ? describe : describe.skip;
 
 const fetchMock = vi.fn();
 
+const adminCredentials = {
+  email: 'admin@example.com',
+  password: 'StrongPass!123'
+};
+
 vi.mock('node-fetch', () => ({
   __esModule: true,
   default: fetchMock
@@ -90,12 +95,12 @@ describeIfRuntime('sales simulation API', () => {
       .start();
 
     process.env.DATABASE_URL = container.getConnectionUri();
-    process.env.API_KEY = 'integration-key';
     process.env.OPENAI_API_KEY = 'integration-openai';
     process.env.REALTIME_MODEL = 'test-realtime';
     process.env.RESPONSES_MODEL = 'test-responses';
     process.env.APP_ENV = 'dev';
     process.env.PORT = '0';
+    process.env.JWT_SECRET = 'integration-secret';
 
     execFileSync(
       process.platform === 'win32' ? 'npx.cmd' : 'npx',
@@ -107,24 +112,43 @@ describeIfRuntime('sales simulation API', () => {
       }
     );
 
+    const { prisma } = await import('../../src/lib/prisma.js');
+    const { hashPassword } = await import('../../src/services/authService.js');
+
+    await prisma.adminUser.create({
+      data: {
+        email: adminCredentials.email,
+        passwordHash: await hashPassword(adminCredentials.password),
+        role: 'admin'
+      }
+    });
+
     const { buildServer } = await import('../../src/server.js');
     app = buildServer();
     await app.ready();
     request = supertest(app.server);
   }, 60000);
 
-  it('creates a conversation, negotiates realtime session and persists transcript and score', async () => {
-    const startResponse = await request
-      .post('/api/start')
-      .set('x-api-key', 'integration-key')
+  it('enforces admin auth across API routes and supports full conversation flow', async () => {
+    await request.post('/api/start').expect(401);
+
+    const loginResponse = await request
+      .post('/api/admin/login')
+      .send(adminCredentials)
       .expect(200);
+
+    const token = loginResponse.body.token as string;
+    expect(token).toBeTruthy();
+    const authHeader = `Bearer ${token}`;
+
+    const startResponse = await request.post('/api/start').set('Authorization', authHeader).expect(200);
 
     const conversationId = startResponse.body.conversationId;
     expect(conversationId).toBeTruthy();
 
     await request
       .post('/api/realtime/session')
-      .set('x-api-key', 'integration-key')
+      .set('Authorization', authHeader)
       .send({
         sdp: 'v=0',
         conversationId,
@@ -134,7 +158,7 @@ describeIfRuntime('sales simulation API', () => {
 
     const finalizeResponse = await request
       .post(`/api/realtime/${conversationId}/finalize`)
-      .set('x-api-key', 'integration-key')
+      .set('Authorization', authHeader)
       .send({ transcript: 'Hello there' })
       .expect(200);
 
@@ -147,7 +171,7 @@ describeIfRuntime('sales simulation API', () => {
 
     const fetchResponse = await request
       .get(`/api/conversation/${conversationId}`)
-      .set('x-api-key', 'integration-key')
+      .set('Authorization', authHeader)
       .expect(200);
 
     expect(fetchResponse.body).toMatchObject({
@@ -159,14 +183,14 @@ describeIfRuntime('sales simulation API', () => {
 
     const promptsResponse = await request
       .get('/api/admin/prompts')
-      .set('x-api-key', 'integration-key')
+      .set('Authorization', authHeader)
       .expect(200);
 
     expect(Array.isArray(promptsResponse.body.prompts)).toBe(true);
 
     const summaryResponse = await request
       .get('/api/analytics/summary')
-      .set('x-api-key', 'integration-key')
+      .set('Authorization', authHeader)
       .expect(200);
 
     expect(summaryResponse.body).toMatchObject({
@@ -183,7 +207,7 @@ describeIfRuntime('sales simulation API', () => {
 
     const trendsResponse = await request
       .get('/api/analytics/trends?days=5')
-      .set('x-api-key', 'integration-key')
+      .set('Authorization', authHeader)
       .expect(200);
 
     expect(trendsResponse.body.success).toBe(true);
@@ -192,7 +216,7 @@ describeIfRuntime('sales simulation API', () => {
 
     const distributionResponse = await request
       .get('/api/analytics/score-distribution')
-      .set('x-api-key', 'integration-key')
+      .set('Authorization', authHeader)
       .expect(200);
 
     expect(distributionResponse.body.success).toBe(true);
@@ -204,7 +228,7 @@ describeIfRuntime('sales simulation API', () => {
 
     const preferencesResponse = await request
       .get('/api/user/preferences?userId=integration-user')
-      .set('x-api-key', 'integration-key')
+      .set('Authorization', authHeader)
       .expect(200);
 
     expect(preferencesResponse.body).toMatchObject({
@@ -219,7 +243,7 @@ describeIfRuntime('sales simulation API', () => {
 
     const savePreferencesResponse = await request
       .post('/api/user/preferences')
-      .set('x-api-key', 'integration-key')
+      .set('Authorization', authHeader)
       .send({
         userId: 'integration-user',
         realtimeModel: 'updated-realtime',
