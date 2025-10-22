@@ -107,18 +107,23 @@ export const buildServer = () => {
       return;
     }
 
-    // Public endpoints that don't require JWT authentication
+    // Public endpoints and patterns that don't require JWT authentication
     const publicEndpoints = [
       '/api/admin/login',        // Admin login
       '/api/token',              // OpenAI token generation
       '/api/start',              // Start simulation
-      '/api/conversations',      // User conversations
+      '/api/conversations',      // List conversations
+      '/api/conversation',       // Conversation operations (with path params)
       '/api/scores',             // User scores
       '/api/user/preferences'    // User preferences
     ];
 
-    // Check if route is public or starts with /api/realtime
-    if (publicEndpoints.includes(routePath) || routePath.startsWith('/api/realtime')) {
+    // Check if route is public (exact match or starts with pattern)
+    const isPublic = publicEndpoints.some(endpoint =>
+      routePath === endpoint || routePath.startsWith(endpoint + '/')
+    ) || routePath.startsWith('/api/realtime');
+
+    if (isPublic) {
       return;
     }
 
