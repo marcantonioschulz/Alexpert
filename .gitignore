@@ -9,6 +9,9 @@ dist
 frontend/dist
 backend/dist
 postgres_data
+coverage
+test-results
+*.log
 
 # TypeScript build info
 *.tsbuildinfo

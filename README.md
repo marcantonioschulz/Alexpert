@@ -1,10 +1,12 @@
 # Alexpert
 
-[![CI/CD](https://github.com/marcantonioschulz/Web-App-Agents-SDK/actions/workflows/ci.yml/badge.svg)](https://github.com/marcantonioschulz/Web-App-Agents-SDK/actions/workflows/ci.yml)
+[![CI/CD](https://github.com/marcantonioschulz/Alexpert/actions/workflows/ci.yml/badge.svg)](https://github.com/marcantonioschulz/Alexpert/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/marcantonioschulz/Alexpert/branch/main/graph/badge.svg)](https://codecov.io/gh/marcantonioschulz/Alexpert)
 [![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](./LICENSE)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue)](https://www.typescriptlang.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://hub.docker.com/)
+[![Security: Trivy](https://img.shields.io/badge/Security-Trivy-green?logo=aqua)](https://github.com/marcantonioschulz/Alexpert/security)
 [![Commercial License Available](https://img.shields.io/badge/Commercial_License-Available-green.svg)](./LICENSE)
 
 > Alexpert - Die intelligente Sales-Training-Plattform mit KI-gestützten Voice Agents und Echtzeit-Analytics, entwickelt mit React, Fastify und OpenAI's Realtime API.
@@ -32,6 +34,64 @@ Alexpert ist eine moderne KI-gestützte Sales-Training-Plattform. Das System erm
 | **KI** | OpenAI Realtime API, GPT-4o |
 | **DevOps** | Docker, GitHub Actions, GHCR |
 | **Monitoring** | Prometheus, Grafana, Alertmanager |
+
+---
+
+## 🚀 Quick Start (Installation in 2 Minuten!)
+
+```bash
+# 1. Repository klonen
+git clone https://github.com/marcantonioschulz/Alexpert.git
+cd Alexpert
+
+# 2. Automatisches Setup (installiert alles, generiert Credentials, migriert DB)
+make install
+
+# 3. OpenAI API Key in .env hinzufügen
+# OPENAI_API_KEY=sk-your-actual-key
+
+# 4. Development Server starten
+make dev
+```
+
+**Das war's!** 🎉 Öffne http://localhost:3000
+
+### Was `make install` automatisch macht:
+
+- ✅ Prüft Prerequisites (Node.js, Docker, Git)
+- ✅ Generiert sichere `API_KEY` und `JWT_SECRET`
+- ✅ Installiert alle Dependencies
+- ✅ Generiert Prisma Client
+- ✅ Startet PostgreSQL Datenbank
+- ✅ Führt Migrationen aus
+- ✅ Baut Projekte
+- ✅ Führt Tests aus
+
+**Keine manuelle Konfiguration nötig!** Alle Credentials werden automatisch generiert.
+
+### Wichtigste Make-Commands:
+
+```bash
+# Entwicklung
+make dev              # Backend + Frontend starten
+make test             # Alle Tests ausführen
+make test-coverage    # Tests mit Coverage Report
+make lint             # Code-Qualität prüfen
+
+# Docker
+make docker           # Mit Docker Compose starten
+make docker-logs      # Logs anzeigen
+
+# Datenbank
+make migrate          # Migrationen ausführen
+make db-studio        # Prisma Studio öffnen
+
+# Status & Cleanup
+make health           # Service-Status prüfen
+make clean            # Build-Artefakte löschen
+```
+
+Alle Commands: `make help`
 
 ---
 

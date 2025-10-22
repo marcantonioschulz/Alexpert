@@ -95,7 +95,6 @@ jobs:
   test:
     name: Test (${{ matrix.project }})
     runs-on: ubuntu-latest
-    environment: TEST_ENV
     needs: [lint, build]
     strategy:
       fail-fast: false
@@ -105,7 +104,9 @@ jobs:
       run:
         working-directory: ${{ matrix.project }}
     env:
-      API_KEY: ${{ secrets.API_KEY }}
+      # Test credentials (loaded from vitest.setup.ts - no secrets needed in CI)
+      NODE_ENV: test
+      CI: true
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -141,10 +142,33 @@ jobs:
       - name: Run tests
         run: npm test --if-present
 
+      - name: Run tests with coverage
+        if: matrix.project == 'backend'
+        run: npm run test:coverage --if-present
+
+      - name: Upload coverage reports
+        if: matrix.project == 'backend'
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage/coverage-final.json
+          flags: backend
+          name: backend-coverage
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.project }}
+          path: |
+            ${{ matrix.project }}/coverage/
+            ${{ matrix.project }}/test-results/
+          retention-days: 30
+
   docker:
     name: Build & Push Docker image (${{ matrix.service }})
     runs-on: ubuntu-latest
-    environment: TEST_ENV
     needs:
       - test
     if: github.ref == 'refs/heads/main'
@@ -157,6 +181,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to registry
         uses: docker/login-action@v3
@@ -173,21 +200,39 @@ jobs:
           tags: |
             type=ref,event=branch
             type=sha,prefix={{branch}}-
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
 
       - name: Build and push
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: ./${{ matrix.service }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            API_KEY=${{ secrets.API_KEY }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.meta.outputs.tags }}
+          format: 'sarif'
+          output: 'trivy-results-${{ matrix.service }}.sarif'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results-${{ matrix.service }}.sarif'
+          category: 'trivy-${{ matrix.service }}'
 
   deploy:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    environment: TEST_ENV
+    environment: production
     needs:
       - docker
     if: github.ref == 'refs/heads/main'
@@ -197,6 +242,7 @@ jobs:
         run: |
           if [ -z "${{ secrets.DEPLOY_HOST }}" ]; then
             echo "skip=true" >> $GITHUB_OUTPUT
+            echo "::notice::Deployment skipped - DEPLOY_HOST not configured"
           else
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
@@ -210,9 +256,40 @@ jobs:
           port: ${{ secrets.DEPLOY_PORT }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          envs: GITHUB_TOKEN,REGISTRY,DEPLOY_WORKDIR
           script: |
-            export API_KEY=${{ secrets.API_KEY }}
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
-            cd ${{ secrets.DEPLOY_WORKDIR }}
+            # Login to registry (token passed via env, not in command)
+            echo "${GITHUB_TOKEN}" | docker login ${REGISTRY} -u ${{ github.actor }} --password-stdin
+
+            # Navigate to deployment directory
+            cd ${DEPLOY_WORKDIR}
+
+            # Pull latest images
             docker compose pull
+
+            # Deploy with zero-downtime (recreate changed containers)
             docker compose up -d --remove-orphans
+
+            # Health check
+            timeout 30 sh -c 'until docker compose exec -T backend wget --spider -q http://localhost:4000/health; do sleep 2; done' || echo "::warning::Health check timeout"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REGISTRY: ${{ env.REGISTRY }}
+          DEPLOY_WORKDIR: ${{ secrets.DEPLOY_WORKDIR }}
+
+      - name: Verify deployment
+        if: steps.check-deploy.outputs.skip == 'false'
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          port: ${{ secrets.DEPLOY_PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          script: |
+            cd ${{ secrets.DEPLOY_WORKDIR }}
+            echo "=== Container Status ==="
+            docker compose ps
+            echo ""
+            echo "=== Recent Logs (last 20 lines) ==="
+            docker compose logs --tail=20
