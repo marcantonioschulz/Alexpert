@@ -130,26 +130,16 @@ describeIfRuntime('sales simulation API', () => {
     request = supertest(app.server);
   }, 60000);
 
-  it('enforces admin auth across API routes and supports full conversation flow', async () => {
-    await request.post('/api/start').expect(401);
-
-    const loginResponse = await request
-      .post('/api/admin/login')
-      .send(adminCredentials)
-      .expect(200);
-
-    const token = loginResponse.body.token as string;
-    expect(token).toBeTruthy();
-    const authHeader = `Bearer ${token}`;
-
-    const startResponse = await request.post('/api/start').set('Authorization', authHeader).expect(200);
+  it('public endpoints work without auth, admin endpoints require auth', async () => {
+    // Public endpoint: /api/start should work without auth
+    const startResponse = await request.post('/api/start').expect(200);
 
     const conversationId = startResponse.body.conversationId;
     expect(conversationId).toBeTruthy();
 
+    // Public endpoint: /api/realtime/* should work without auth
     await request
       .post('/api/realtime/session')
-      .set('Authorization', authHeader)
       .send({
         sdp: 'v=0',
         conversationId,
@@ -157,9 +147,9 @@ describeIfRuntime('sales simulation API', () => {
       })
       .expect(200);
 
+    // Public endpoint: /api/realtime/{id}/finalize should work without auth
     const finalizeResponse = await request
       .post(`/api/realtime/${conversationId}/finalize`)
-      .set('Authorization', authHeader)
       .send({ transcript: 'Hello there' })
       .expect(200);
 
@@ -170,9 +160,9 @@ describeIfRuntime('sales simulation API', () => {
       feedback: 'Great job'
     });
 
+    // Public endpoint: /api/conversation/{id} should work without auth
     const fetchResponse = await request
       .get(`/api/conversation/${conversationId}`)
-      .set('Authorization', authHeader)
       .expect(200);
 
     expect(fetchResponse.body).toMatchObject({
@@ -182,6 +172,23 @@ describeIfRuntime('sales simulation API', () => {
       feedback: 'Great job'
     });
 
+    // Protected endpoint: /api/admin/prompts should require auth
+    await request.get('/api/admin/prompts').expect(401);
+
+    // Protected endpoint: /api/analytics/summary should require auth
+    await request.get('/api/analytics/summary').expect(401);
+
+    // Login to get admin token
+    const loginResponse = await request
+      .post('/api/admin/login')
+      .send(adminCredentials)
+      .expect(200);
+
+    const token = loginResponse.body.token as string;
+    expect(token).toBeTruthy();
+    const authHeader = `Bearer ${token}`;
+
+    // Protected endpoint: /api/admin/prompts should work with auth
     const promptsResponse = await request
       .get('/api/admin/prompts')
       .set('Authorization', authHeader)
@@ -189,6 +196,7 @@ describeIfRuntime('sales simulation API', () => {
 
     expect(Array.isArray(promptsResponse.body.prompts)).toBe(true);
 
+    // Protected endpoint: /api/analytics/summary should work with auth
     const summaryResponse = await request
       .get('/api/analytics/summary')
       .set('Authorization', authHeader)
