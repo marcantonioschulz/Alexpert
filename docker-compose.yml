@@ -1,12 +1,12 @@
 services:
   db:
     image: postgres:16-alpine
-    container_name: sales-simulation-db
+    container_name: alexpert-db
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: sales_simulation
+      POSTGRES_DB: alexpert
     ports:
       - '${POSTGRES_PORT:-5432}:5432'
     volumes:
@@ -17,14 +17,14 @@ services:
   backend:
     build:
       context: ./backend
-    container_name: sales-simulation-backend
+    container_name: alexpert-backend
     depends_on:
       - db
     environment:
       NODE_ENV: ${NODE_ENV:-production}
       APP_ENV: ${APP_ENV:-prod}
       PORT: ${PORT:-4000}
-      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@db:5432/sales_simulation}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@db:5432/alexpert}
       API_KEY: ${API_KEY:-super-secret-key}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-replace-me}
       REALTIME_MODEL: ${REALTIME_MODEL:-gpt-4o-realtime-preview}
@@ -39,14 +39,14 @@ services:
   frontend:
     build:
       context: ./frontend
-    container_name: sales-simulation-frontend
+    container_name: alexpert-frontend
     depends_on:
       - backend
     environment:
       APP_ENV: ${APP_ENV:-prod}
       VITE_API_KEY: ${API_KEY:-super-secret-key}
       VITE_ALLOWED_HOSTS: ${VITE_ALLOWED_HOSTS:-localhost}
-      VITE_BACKEND_URL: http://sales-simulation-backend:4000
+      VITE_BACKEND_URL: http://alexpert-backend:4000
       VITE_HOST: ${VITE_HOST:-0.0.0.0}
       VITE_PORT: ${VITE_PORT:-3000}
     ports:

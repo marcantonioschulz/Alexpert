@@ -7,13 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Rebranded from "Web App Agents SDK" to "Alexpert"
+- Updated all package names to use alexpert branding
+- Updated documentation with new Alexpert branding
+
 ### Added
 - Comprehensive community documentation (issue templates, PR template, CODE_OF_CONDUCT, CONTRIBUTING, SECURITY)
 - Proprietary license with commercial licensing model
 - Semantic versioning strategy
 - CHANGELOG.md for version tracking
 
-### Changed
+### Changed (Previous)
 - License changed from MIT to proprietary license
 - README enhanced with badges, features overview, and licensing information
 - Package metadata updated across all package.json files

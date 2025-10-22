@@ -1,4 +1,4 @@
-# Web App Agents SDK
+# Alexpert
 
 [![CI/CD](https://github.com/marcantonioschulz/Web-App-Agents-SDK/actions/workflows/ci.yml/badge.svg)](https://github.com/marcantonioschulz/Web-App-Agents-SDK/actions/workflows/ci.yml)
 [![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](./LICENSE)
@@ -7,11 +7,11 @@
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://hub.docker.com/)
 [![Commercial License Available](https://img.shields.io/badge/Commercial_License-Available-green.svg)](./LICENSE)
 
-> Eine vollständige Sales-Simulation-Plattform mit KI-gestützten Voice Agents und Echtzeit-Analytics, entwickelt mit React, Fastify und OpenAI's Realtime API.
+> Alexpert - Die intelligente Sales-Training-Plattform mit KI-gestützten Voice Agents und Echtzeit-Analytics, entwickelt mit React, Fastify und OpenAI's Realtime API.
 
-## Über das Projekt
+## Über Alexpert
 
-Dieses Repository enthält die Referenzimplementierung für eine moderne Sales-Simulation-Plattform. Das System ermöglicht realistische Verkaufsgespräche mit KI-Agenten, erfasst detaillierte Metriken und visualisiert Performance-Daten in Echtzeit.
+Alexpert ist eine moderne KI-gestützte Sales-Training-Plattform. Das System ermöglicht realistische Verkaufsgespräche mit intelligenten KI-Agenten, erfasst detaillierte Metriken und visualisiert Performance-Daten in Echtzeit.
 
 ### Kernfeatures
 

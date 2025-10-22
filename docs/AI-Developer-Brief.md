@@ -2,9 +2,9 @@
 
 ## Kontext
 
-- **Projekt**: Sales Simulation (AI-gestütztes Verkaufstraining mit Realtime Audio)
-- **Laufumgebung**: Docker Compose unter `/opt/sales-simulation`
-- **Reverse Proxy**: Nginx Proxy Manager (NPM) über `sales.cloud-schulz.de`
+- **Projekt**: Alexpert (AI-gestütztes Verkaufstraining mit Realtime Audio)
+- **Laufumgebung**: Docker Compose unter `/opt/alexpert`
+- **Reverse Proxy**: Nginx Proxy Manager (NPM) über `alexpert.ai` oder `sales.cloud-schulz.de`
 - **Netzwerke**:
   - `frontend` (external `172.18.0.0/16`) für Webzugang
   - `backend` (external `172.21.0.0/16`) für DB/Interne Services

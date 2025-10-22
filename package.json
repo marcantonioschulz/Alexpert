@@ -1,7 +1,7 @@
 {
-  "name": "web-app-agents-sdk",
+  "name": "alexpert",
   "version": "1.0.0",
-  "description": "A full-stack sales simulation platform with AI-powered voice agents and real-time analytics",
+  "description": "Alexpert - AI-powered sales training platform with intelligent voice agents and real-time analytics",
   "private": true,
   "type": "module",
   "author": "Marc Antonio Schulz",

@@ -1,6 +1,6 @@
 apiVersion: 1
 providers:
-  - name: sales-simulation-dashboards
+  - name: alexpert-dashboards
     orgId: 1
     type: file
     disableDeletion: false
