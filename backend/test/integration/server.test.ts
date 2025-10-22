@@ -100,7 +100,8 @@ describeIfRuntime('sales simulation API', () => {
     process.env.RESPONSES_MODEL = 'test-responses';
     process.env.APP_ENV = 'dev';
     process.env.PORT = '0';
-    process.env.JWT_SECRET = 'integration-secret';
+    process.env.API_KEY = 'integration-api-key-1234567890';
+    process.env.JWT_SECRET = 'integration-jwt-secret-12345678901234567890';
 
     execFileSync(
       process.platform === 'win32' ? 'npx.cmd' : 'npx',
