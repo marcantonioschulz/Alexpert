@@ -16,6 +16,29 @@ First off, thank you for considering contributing to this project! It's people l
 
 This project and everyone participating in it is governed by our [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
 
+## ⚖️ Important: Licensing and Contributions
+
+**This is a proprietary project with a custom license.**
+
+### What This Means for Contributors
+
+- ✅ **You keep copyright** of your contributions
+- ✅ **You get credit** for your work in release notes and documentation
+- ⚠️ **You grant a commercial license** to Marc Antonio Schulz to use your contribution
+- ⚠️ **Your contribution may be used** in commercial versions of this software
+
+By submitting a pull request, you agree to these terms as outlined in the [LICENSE](LICENSE).
+
+### Why This Model?
+
+This project is **source-available** (you can see and contribute to the code) but **not open-source** in the traditional sense. Commercial licenses fund:
+- Continued development and maintenance
+- Professional support for enterprise customers
+- Community infrastructure and resources
+- Contributor recognition and potential compensation for significant contributions
+
+If you have concerns about this model, please open a discussion before contributing.
+
 ## Getting Started
 
 ### Prerequisites

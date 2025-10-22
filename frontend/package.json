@@ -1,11 +1,11 @@
 {
   "name": "sales-simulation-frontend",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "React frontend for sales simulation platform with real-time voice interaction",
   "private": true,
   "type": "module",
   "author": "Marc Antonio Schulz",
-  "license": "MIT",
+  "license": "UNLICENSED",
   "repository": {
     "type": "git",
     "url": "https://github.com/marcantonioschulz/Web-App-Agents-SDK.git",

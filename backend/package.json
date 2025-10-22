@@ -1,11 +1,11 @@
 {
   "name": "sales-simulation-backend",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Backend API for sales simulation platform with OpenAI Realtime API integration",
   "private": true,
   "type": "module",
   "author": "Marc Antonio Schulz",
-  "license": "MIT",
+  "license": "UNLICENSED",
   "repository": {
     "type": "git",
     "url": "https://github.com/marcantonioschulz/Web-App-Agents-SDK.git",

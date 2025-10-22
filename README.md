@@ -1,10 +1,11 @@
 # Web App Agents SDK
 
 [![CI/CD](https://github.com/marcantonioschulz/Web-App-Agents-SDK/actions/workflows/ci.yml/badge.svg)](https://github.com/marcantonioschulz/Web-App-Agents-SDK/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](./LICENSE)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue)](https://www.typescriptlang.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://hub.docker.com/)
+[![Commercial License Available](https://img.shields.io/badge/Commercial_License-Available-green.svg)](./LICENSE)
 
 > Eine vollständige Sales-Simulation-Plattform mit KI-gestützten Voice Agents und Echtzeit-Analytics, entwickelt mit React, Fastify und OpenAI's Realtime API.
 
@@ -200,6 +201,32 @@ docker compose up -d
 
 Die Datei [`docker-compose.yml`](./docker-compose.yml) enthält jetzt optional aktivierbare Services für Prometheus, Alertmanager, Grafana und node-exporter. Alle Konfigurationsdateien sowie vorprovisionierte Dashboards liegen im Ordner [`monitoring/`](./monitoring). Eine ausführliche Anleitung inklusive Alert-Routing nach Slack/Discord findest du in [`docs/monitoring.md`](./docs/monitoring.md).
 
+## Versioning
+
+Dieses Projekt nutzt [Semantic Versioning](https://semver.org/):
+- **MAJOR** (X.0.0): Breaking Changes, inkompatible API-Änderungen
+- **MINOR** (0.X.0): Neue Features, rückwärtskompatibel
+- **PATCH** (0.0.X): Bugfixes, rückwärtskompatibel
+
+### Aktuelle Version: v1.0.0
+
+Siehe [CHANGELOG.md](CHANGELOG.md) für alle Änderungen und Release-Notes.
+
+### Version Updates (für Maintainer)
+
+```bash
+# Patch Release (1.0.0 → 1.0.1) - Bugfixes
+npm run version:patch
+
+# Minor Release (1.0.0 → 1.1.0) - Neue Features
+npm run version:minor
+
+# Major Release (1.0.0 → 2.0.0) - Breaking Changes
+npm run version:major
+```
+
+Diese Befehle aktualisieren automatisch alle package.json Dateien und erstellen einen Git-Tag.
+
 ## Contributing
 
 Wir freuen uns über Beiträge zur Verbesserung des Projekts! Bevor du startest:
@@ -232,9 +259,45 @@ cd frontend && npm test
 
 Weitere Details findest du in [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## License
+## License & Commercial Use
 
-Dieses Projekt steht unter der MIT License - siehe [LICENSE](LICENSE) für Details.
+### 📜 Proprietary License
+
+**Dieser Code ist urheberrechtlich geschützt und steht unter einer proprietären Lizenz.**
+
+#### Erlaubte Nutzung (kostenlos):
+- ✅ Ansehen und Studieren des Quellcodes
+- ✅ Beiträge via Pull Requests
+- ✅ Lokales Testen und Entwicklung
+- ✅ Bildungszwecke und Lernen
+
+#### Nicht erlaubt ohne kommerzielle Lizenz:
+- ❌ Kommerzielle Nutzung
+- ❌ Weiterverkauf oder Distribution
+- ❌ Hosting als Service für Dritte
+- ❌ Kommerzielle Derivate
+
+### 💼 Kommerzielle Lizenz erforderlich?
+
+Wenn du diese Software verwenden möchtest für:
+- Kommerzielle Projekte
+- Software-as-a-Service (SaaS)
+- Geschäftsanwendungen
+- Kundenimplementierungen
+
+**Kontaktiere mich für eine kommerzielle Lizenz:**
+- 📧 Email: [INSERT COMMERCIAL EMAIL]
+- 🌐 Website: [INSERT WEBSITE]
+- 💬 GitHub: [@marcantonioschulz](https://github.com/marcantonioschulz)
+
+### 🤝 Beiträge
+
+Community-Beiträge sind willkommen! Durch deine Beiträge:
+- Behältst du das Copyright deiner Arbeit
+- Gewährst du mir das Recht, deinen Beitrag auch kommerziell zu nutzen
+- Hilfst du, das Projekt für alle zu verbessern
+
+Siehe [LICENSE](LICENSE) für vollständige Details.
 
 ## Support & Community
 

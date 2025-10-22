@@ -5,7 +5,7 @@
   "private": true,
   "type": "module",
   "author": "Marc Antonio Schulz",
-  "license": "MIT",
+  "license": "UNLICENSED",
   "repository": {
     "type": "git",
     "url": "https://github.com/marcantonioschulz/Web-App-Agents-SDK.git"
@@ -28,7 +28,10 @@
   ],
   "scripts": {
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "version:major": "npm version major && cd backend && npm version major && cd ../frontend && npm version major",
+    "version:minor": "npm version minor && cd backend && npm version minor && cd ../frontend && npm version minor",
+    "version:patch": "npm version patch && cd backend && npm version patch && cd ../frontend && npm version patch"
   },
   "devDependencies": {
     "@eslint/js": "^9.10.0",

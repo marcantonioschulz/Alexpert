@@ -1,21 +1,91 @@
-MIT License
+PROPRIETARY LICENSE
 
-Copyright (c) 2025 Marc Antonio Schulz
+Copyright (c) 2025 Marc Antonio Schulz. All rights reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+## Terms and Conditions
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+### 1. Grant of Rights
+
+This software and associated documentation files (the "Software") are made
+publicly available for **viewing, learning, and contribution purposes only**.
+
+You are granted the following limited rights:
+
+- ✅ **View and Study**: You may view and study the source code
+- ✅ **Contribute**: You may submit improvements, bug fixes, and features via pull requests
+- ✅ **Personal Testing**: You may run the software locally for personal testing and development purposes
+- ✅ **Educational Use**: You may use this software for educational and learning purposes
+
+### 2. Restrictions
+
+The following actions are **explicitly prohibited** without prior written permission
+from Marc Antonio Schulz:
+
+- ❌ **Commercial Use**: You may NOT use this software for any commercial purposes
+- ❌ **Distribution**: You may NOT distribute, sell, lease, or sublicense the software
+- ❌ **Hosting Services**: You may NOT offer this software as a hosted service to third parties
+- ❌ **Derivative Works**: You may NOT create derivative works for commercial distribution
+- ❌ **Forking for Commercial Use**: You may NOT fork this repository for commercial purposes
+- ❌ **Removal of Copyright**: You may NOT remove or modify copyright notices
+
+### 3. Commercial Licensing
+
+**Commercial licenses are available exclusively from Marc Antonio Schulz.**
+
+If you wish to:
+- Use this software in a commercial environment
+- Offer this software as a service
+- Create commercial derivatives
+- Deploy this software for business purposes
+
+You **must obtain a commercial license** by contacting:
+- **Email**: [INSERT COMMERCIAL LICENSING EMAIL]
+- **Website**: [INSERT COMMERCIAL LICENSING WEBSITE]
+
+### 4. Contributions
+
+By submitting a contribution (pull request, issue, suggestion) to this project:
+
+- You grant Marc Antonio Schulz a perpetual, worldwide, non-exclusive, royalty-free
+  license to use, reproduce, modify, and distribute your contribution
+- You retain copyright of your contribution
+- You agree that Marc Antonio Schulz may include your contribution in commercial
+  versions of the software
+- You confirm that you have the right to submit the contribution
+
+### 5. Ownership
+
+Marc Antonio Schulz retains all ownership rights, title, and interest in and to
+the Software, including all intellectual property rights.
+
+### 6. Disclaimer of Warranty
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+
+### 7. Limitation of Liability
+
+IN NO EVENT SHALL MARC ANTONIO SCHULZ BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+### 8. Termination
+
+This license is effective until terminated. Your rights under this license will
+terminate automatically without notice if you fail to comply with any of its terms.
+
+### 9. Governing Law
+
+This license shall be governed by and construed in accordance with the laws of
+[INSERT JURISDICTION], without regard to its conflict of law provisions.
+
+---
+
+**For commercial licensing inquiries, please contact:**
+- Marc Antonio Schulz
+- Email: [INSERT EMAIL]
+- GitHub: https://github.com/marcantonioschulz
+
+Last Updated: 2025-01-22
