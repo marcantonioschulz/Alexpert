@@ -142,7 +142,7 @@ jobs:
         run: npm test --if-present
 
   docker:
-    name: Build & Push Docker image
+    name: Build & Push Docker image (${{ matrix.service }})
     runs-on: ubuntu-latest
     environment: TEST_ENV
     needs:
@@ -151,6 +151,9 @@ jobs:
     permissions:
       contents: read
       packages: write
+    strategy:
+      matrix:
+        service: [backend, frontend]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -166,12 +169,15 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-${{ matrix.service }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix={{branch}}-
 
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: ./${{ matrix.service }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
