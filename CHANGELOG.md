@@ -7,28 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-- Rebranded from "Web App Agents SDK" to "Alexpert"
-- Updated all package names to use alexpert branding
-- Updated documentation with new Alexpert branding
-
-### Added
-- Comprehensive community documentation (issue templates, PR template, CODE_OF_CONDUCT, CONTRIBUTING, SECURITY)
-- Proprietary license with commercial licensing model
-- Semantic versioning strategy
-- CHANGELOG.md for version tracking
-
-### Changed (Previous)
-- License changed from MIT to proprietary license
-- README enhanced with badges, features overview, and licensing information
-- Package metadata updated across all package.json files
-
-## [1.0.0] - 2025-01-22
+## [1.0.0] - 2025-10-22
 
 ### Added
 - Initial public release
 - Full-stack sales simulation platform
 - AI-powered voice agents using OpenAI Realtime API
+- Comprehensive community documentation (issue templates, PR template, CODE_OF_CONDUCT, CONTRIBUTING, SECURITY)
+- Proprietary license with commercial licensing model
+- Semantic versioning strategy
+- CHANGELOG.md for version tracking
+- CLAUDE.md for AI-assisted development guidance
+- Rebranded from "Web App Agents SDK" to "Alexpert"
 - Real-time analytics dashboard
 - JWT-based admin authentication
 - Docker Compose setup for development and production
@@ -37,6 +27,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - PostgreSQL database with Prisma ORM
 - Comprehensive test suite with 80%+ coverage
 - Prometheus/Grafana monitoring setup
+
+### Changed
+- Updated all package names to use Alexpert branding
+- License changed from MIT to proprietary license
+- README enhanced with badges, features overview, and licensing information
+- Package metadata updated across all package.json files
+- Enhanced .gitignore to exclude build artifacts and generated files
 
 ### Backend Features
 - Fastify REST API
