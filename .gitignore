@@ -9,3 +9,14 @@ dist
 frontend/dist
 backend/dist
 postgres_data
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Generated TypeScript/JS files
+frontend/vite.config.js
+frontend/vite.config.d.ts
+
+# Legacy ESLint config (project uses eslint.config.mjs)
+.eslintrc.cjs
+.eslintignore
