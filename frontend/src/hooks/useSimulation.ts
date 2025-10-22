@@ -262,7 +262,7 @@ export const useSimulation = (options: SimulationOptions | null) => {
         };
       });
 
-      const offer = await pc.createOffer({ offerToReceiveAudio: true, voiceActivityDetection: true });
+      const offer = await pc.createOffer({ offerToReceiveAudio: true });
       await pc.setLocalDescription(offer);
 
       const sdpResponse = await fetch('/api/realtime/session', {
