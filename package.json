@@ -1,9 +1,19 @@
 {
+  "name": "web-app-agents-sdk",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
   "devDependencies": {
+    "@eslint/js": "^9.10.0",
     "eslint": "^9.34.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-react": "^7.37.2",
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
+    "globals": "^15.9.0",
     "typescript-eslint": "^8.46.1"
   }
 }

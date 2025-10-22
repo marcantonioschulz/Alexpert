@@ -17,8 +17,34 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  lint_build:
-    name: Lint & Build (${{ matrix.project }})
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Cache root npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-root-${{ hashFiles('package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-root-
+
+      - name: Install root dependencies
+        run: npm install --prefer-offline
+
+      - name: Run ESLint
+        run: npm run lint
+
+  build:
+    name: Build (${{ matrix.project }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -63,9 +89,6 @@ jobs:
         if: matrix.project == 'backend'
         run: npm run prisma:generate
 
-      - name: Run ESLint
-        run: npx eslint . --max-warnings=0
-
       - name: Build
         run: npm run build --if-present
 
@@ -73,7 +96,7 @@ jobs:
     name: Test (${{ matrix.project }})
     runs-on: ubuntu-latest
     environment: TEST_ENV
-    needs: lint_build
+    needs: [lint, build]
     strategy:
       fail-fast: false
       matrix:

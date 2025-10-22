@@ -96,13 +96,6 @@ export default tseslint.config(
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
-  {
-    settings: {
-      react: {
-        version: 'detect',
-      },
-    },
-  },
   frontendReactConfig,
   backendNodeConfig,
   eslintConfigPrettier,
