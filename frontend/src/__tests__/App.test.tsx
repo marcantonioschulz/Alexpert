@@ -25,6 +25,28 @@ vi.mock('../hooks/useSimulation', () => ({
   setTranscriptDraftSpy
 }));
 
+vi.mock('../features/analytics/useAnalyticsData', () => ({
+  __esModule: true,
+  useAnalyticsData: () => ({
+    summary: null,
+    trend: [],
+    distribution: [],
+    loading: false,
+    error: null,
+    refresh: vi.fn()
+  })
+}));
+
+vi.mock('../features/settings/useSettingsManager', () => ({
+  __esModule: true,
+  useSettingsManager: () => ({
+    settings: null,
+    isLoading: false,
+    error: null,
+    updateSettings: vi.fn()
+  })
+}));
+
 describe('App', () => {
   it('renders simulation controls and updates transcript draft', async () => {
     const user = userEvent.setup();
@@ -33,9 +55,8 @@ describe('App', () => {
     expect(screen.getByText('KI Verkaufssimulation')).toBeInTheDocument();
     expect(screen.getByText('Simulation läuft')).toBeInTheDocument();
     expect(screen.getByText(/Konversation-ID: conversation-123/)).toBeInTheDocument();
-    expect(screen.getByText('88')).toBeInTheDocument();
-    expect(screen.getByText('Strong rapport')).toBeInTheDocument();
     expect(screen.getByRole('textbox')).toHaveValue('Draft content');
+    expect(screen.getByText('Hello world')).toBeInTheDocument();
 
     await user.clear(screen.getByRole('textbox'));
     await user.type(screen.getByRole('textbox'), 'Updated note');

@@ -1,6 +1,10 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
 
 describe('env configuration', () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
   it('parses defaults for optional variables', async () => {
     vi.stubEnv('OPENAI_API_KEY', 'test-openai');
     vi.stubEnv('DATABASE_URL', 'postgres://user:pass@localhost:5432/test');

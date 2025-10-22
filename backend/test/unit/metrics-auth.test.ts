@@ -9,6 +9,7 @@ describe('metrics endpoint authentication', () => {
     vi.stubEnv('API_KEY', 'test-api-key');
     vi.stubEnv('OPENAI_API_KEY', 'test-openai-key');
     vi.stubEnv('DATABASE_URL', 'postgres://user:pass@localhost:5432/test');
+    vi.stubEnv('JWT_SECRET', 'test-jwt-secret');
     vi.stubEnv('REALTIME_MODEL', 'test-realtime');
     vi.stubEnv('RESPONSES_MODEL', 'test-responses');
 
