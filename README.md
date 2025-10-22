@@ -286,8 +286,8 @@ Wenn du diese Software verwenden möchtest für:
 - Kundenimplementierungen
 
 **Kontaktiere mich für eine kommerzielle Lizenz:**
-- 📧 Email: [INSERT COMMERCIAL EMAIL]
-- 🌐 Website: [INSERT WEBSITE]
+- 📧 Email: mas@endlichzuhause.com
+- 🌐 Website: [endlichzuhause.com](https://endlichzuhause.com)
 - 💬 GitHub: [@marcantonioschulz](https://github.com/marcantonioschulz)
 
 ### 🤝 Beiträge

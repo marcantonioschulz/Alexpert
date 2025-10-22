@@ -21,7 +21,7 @@ We take the security of our software seriously. If you believe you have found a 
 
 ### Please DO:
 
-1. **Email us privately** at [INSERT SECURITY EMAIL]
+1. **Email us privately** at security@endlichzuhause.com
 2. **Include details** such as:
    - Type of vulnerability
    - Full paths of affected source files
@@ -148,8 +148,7 @@ For security-related questions that aren't vulnerabilities:
 - Tag it with `security` label
 
 For security vulnerabilities:
-- **Email**: [INSERT SECURITY EMAIL]
-- **PGP Key**: [INSERT PGP KEY LINK] (optional)
+- **Email**: security@endlichzuhause.com
 
 ---
 
