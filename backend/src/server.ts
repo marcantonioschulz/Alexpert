@@ -133,6 +133,28 @@ export const buildServer = () => {
     await cacheClient.disconnect();
   });
 
+  // Health check endpoint for Docker/K8s orchestration
+  app.get('/health', async (request, reply) => {
+    try {
+      // Check database connectivity
+      await prisma.$queryRaw`SELECT 1`;
+
+      return reply.send({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        environment: env.APP_ENV
+      });
+    } catch (error) {
+      request.log.error({ err: error }, 'Health check failed');
+      return reply.status(503).send({
+        status: 'error',
+        timestamp: new Date().toISOString(),
+        message: 'Service unavailable'
+      });
+    }
+  });
+
   app.register(authRoutes);
   app.register(conversationRoutes);
   app.register(tokenRoutes);
@@ -156,6 +178,23 @@ export async function start() {
     process.exit(1);
   }
 }
+
+// Graceful shutdown handling for K8s/Docker
+const signals = ['SIGTERM', 'SIGINT'] as const;
+signals.forEach((signal) => {
+  process.on(signal, async () => {
+    app.log.info(`Received ${signal}, starting graceful shutdown...`);
+
+    try {
+      await app.close();
+      app.log.info('Server closed successfully');
+      process.exit(0);
+    } catch (error) {
+      app.log.error({ err: error }, 'Error during shutdown');
+      process.exit(1);
+    }
+  });
+});
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   start();

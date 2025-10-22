@@ -24,8 +24,9 @@ services:
       APP_ENV: ${APP_ENV:-prod}
       PORT: 4000
       DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@db:5432/alexpert}
-      API_KEY: ${API_KEY:-super-secret-key}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-replace-me}
+      API_KEY: ${API_KEY}  # Required - no weak default
+      JWT_SECRET: ${JWT_SECRET}  # Required - no weak default
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
       REALTIME_MODEL: ${REALTIME_MODEL:-gpt-4o-realtime-preview}
       RESPONSES_MODEL: ${RESPONSES_MODEL:-gpt-4o-mini}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}

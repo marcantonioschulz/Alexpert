@@ -7,7 +7,7 @@ const envSchema = z.object({
   NODE_ENV: z.string().default('development'),
   APP_ENV: z.enum(['dev', 'prod']).default('dev'),
   PORT: z.coerce.number().default(4000),
-  API_KEY: z.string().optional(),
+  API_KEY: z.string().min(16, 'API_KEY must be at least 16 characters for security'),
   OPENAI_API_KEY: z.string(),
   REALTIME_MODEL: z.string().default('gpt-4o-realtime-preview'),
   RESPONSES_MODEL: z.string().default('gpt-4o-mini'),
@@ -19,7 +19,7 @@ const envSchema = z.object({
   OPENAI_BACKOFF_MULTIPLIER: z.coerce.number().optional(),
   CACHE_URL: z.string().url().optional(),
   CACHE_TTL_SECONDS: z.coerce.number().optional(),
-  JWT_SECRET: z.string()
+  JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters for security')
 });
 
 const parsed = envSchema.safeParse(process.env);

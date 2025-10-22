@@ -15,6 +15,10 @@ model Conversation {
   feedback   String?
   createdAt  DateTime @default(now())
   logs       ConversationLog[]
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([userId, createdAt])
 }
 
 enum ConversationLogType {
@@ -32,6 +36,10 @@ model ConversationLog {
   content         String
   context         Json?
   createdAt       DateTime             @default(now())
+
+  @@index([conversationId])
+  @@index([type])
+  @@index([conversationId, type])
 }
 
 model UserPreference {
