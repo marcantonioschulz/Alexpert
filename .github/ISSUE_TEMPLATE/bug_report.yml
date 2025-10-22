@@ -1,0 +1,120 @@
+name: Bug Report
+description: Report a bug or unexpected behavior
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to report a bug! Please fill out the information below to help us resolve the issue.
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Prerequisites
+      description: Please confirm before submitting
+      options:
+        - label: I have searched existing issues to ensure this is not a duplicate
+          required: true
+        - label: I have read the [CONTRIBUTING.md](../CONTRIBUTING.md) guidelines
+          required: true
+        - label: I am using the latest version of the project
+          required: false
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which part of the project is affected?
+      options:
+        - Backend (Fastify/Node.js)
+        - Frontend (React/Vite)
+        - Database (PostgreSQL/Prisma)
+        - Docker/Deployment
+        - CI/CD Pipeline
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is
+      placeholder: When I try to..., the application...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Detailed steps to reproduce the behavior
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. Scroll down to '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+      placeholder: I expected the application to...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+      placeholder: Instead, the application...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs and Error Messages
+      description: If applicable, paste relevant logs or error messages
+      render: shell
+      placeholder: |
+        Error: Something went wrong
+        at ...
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Provide information about your environment
+      value: |
+        - **OS**: [e.g., macOS 13.0, Ubuntu 22.04]
+        - **Node.js Version**: [e.g., 20.11.0]
+        - **npm Version**: [e.g., 10.2.4]
+        - **Docker Version**: [e.g., 24.0.0] (if applicable)
+        - **Browser**: [e.g., Chrome 120] (if frontend issue)
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context about the problem (screenshots, configuration files, etc.)
+      placeholder: Any additional information that might help...
+
+  - type: dropdown
+    id: willing-to-fix
+    attributes:
+      label: Are you willing to submit a PR to fix this issue?
+      options:
+        - "Yes, I can submit a PR"
+        - "Maybe with guidance"
+        - "No, I need help"
+    validations:
+      required: false

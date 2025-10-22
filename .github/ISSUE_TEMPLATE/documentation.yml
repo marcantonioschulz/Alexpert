@@ -1,0 +1,108 @@
+name: Documentation Issue
+description: Report missing, unclear, or incorrect documentation
+title: "[Docs]: "
+labels: ["documentation", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping improve our documentation!
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Prerequisites
+      description: Please confirm before submitting
+      options:
+        - label: I have searched existing issues to ensure this hasn't been reported
+          required: true
+        - label: I have checked the latest version of the documentation
+          required: true
+
+  - type: dropdown
+    id: doc-type
+    attributes:
+      label: Documentation Type
+      description: What type of documentation issue is this?
+      options:
+        - Missing documentation
+        - Unclear or confusing
+        - Incorrect or outdated
+        - Typo or formatting
+        - Code example issue
+        - Missing translation
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: Documentation Location
+      description: Where is the documentation issue? (URL or file path)
+      placeholder: https://github.com/.../README.md or docs/api.md
+    validations:
+      required: true
+
+  - type: textarea
+    id: current
+    attributes:
+      label: Current Documentation
+      description: What does the current documentation say? (Copy/paste the relevant section)
+      render: markdown
+      placeholder: |
+        The current documentation states:
+        > "..."
+
+  - type: textarea
+    id: issue
+    attributes:
+      label: Issue Description
+      description: What is wrong, missing, or unclear?
+      placeholder: The documentation should explain... / It's unclear how to... / The example doesn't work because...
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggested
+    attributes:
+      label: Suggested Improvement
+      description: How should the documentation be improved?
+      placeholder: |
+        The documentation should say:
+        "..."
+
+        Or include an example like:
+        ```
+        code example
+        ```
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Impact
+      description: How much does this affect users?
+      options:
+        - Critical - Prevents users from completing tasks
+        - High - Causes significant confusion
+        - Medium - Minor confusion or improvement needed
+        - Low - Small typo or formatting issue
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context, screenshots, or examples
+
+  - type: dropdown
+    id: willing-to-fix
+    attributes:
+      label: Are you willing to submit a PR to fix this?
+      options:
+        - "Yes, I can submit a PR"
+        - "Maybe with guidance"
+        - "No, I need help"
+    validations:
+      required: false

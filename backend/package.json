@@ -1,8 +1,28 @@
 {
   "name": "sales-simulation-backend",
   "version": "0.1.0",
+  "description": "Backend API for sales simulation platform with OpenAI Realtime API integration",
   "private": true,
   "type": "module",
+  "author": "Marc Antonio Schulz",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/marcantonioschulz/Web-App-Agents-SDK.git",
+    "directory": "backend"
+  },
+  "bugs": {
+    "url": "https://github.com/marcantonioschulz/Web-App-Agents-SDK/issues"
+  },
+  "keywords": [
+    "fastify",
+    "prisma",
+    "postgresql",
+    "openai",
+    "realtime-api",
+    "typescript",
+    "rest-api"
+  ],
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.build.json",

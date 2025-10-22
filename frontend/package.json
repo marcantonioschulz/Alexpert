@@ -1,8 +1,27 @@
 {
   "name": "sales-simulation-frontend",
-  "private": true,
   "version": "0.1.0",
+  "description": "React frontend for sales simulation platform with real-time voice interaction",
+  "private": true,
   "type": "module",
+  "author": "Marc Antonio Schulz",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/marcantonioschulz/Web-App-Agents-SDK.git",
+    "directory": "frontend"
+  },
+  "bugs": {
+    "url": "https://github.com/marcantonioschulz/Web-App-Agents-SDK/issues"
+  },
+  "keywords": [
+    "react",
+    "vite",
+    "typescript",
+    "webrtc",
+    "voice-ui",
+    "analytics-dashboard"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

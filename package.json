@@ -1,8 +1,31 @@
 {
   "name": "web-app-agents-sdk",
   "version": "1.0.0",
+  "description": "A full-stack sales simulation platform with AI-powered voice agents and real-time analytics",
   "private": true,
   "type": "module",
+  "author": "Marc Antonio Schulz",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/marcantonioschulz/Web-App-Agents-SDK.git"
+  },
+  "bugs": {
+    "url": "https://github.com/marcantonioschulz/Web-App-Agents-SDK/issues"
+  },
+  "homepage": "https://github.com/marcantonioschulz/Web-App-Agents-SDK#readme",
+  "keywords": [
+    "sales-simulation",
+    "ai-agents",
+    "voice-agents",
+    "openai",
+    "realtime-api",
+    "fastify",
+    "react",
+    "typescript",
+    "prisma",
+    "postgresql"
+  ],
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"

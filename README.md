@@ -1,6 +1,38 @@
 # Web App Agents SDK
 
-Dieses Repository enthält die Referenzimplementierung für das Sales Simulation Projekt (Frontend, Backend und begleitende Tools).
+[![CI/CD](https://github.com/marcantonioschulz/Web-App-Agents-SDK/actions/workflows/ci.yml/badge.svg)](https://github.com/marcantonioschulz/Web-App-Agents-SDK/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue)](https://www.typescriptlang.org/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://hub.docker.com/)
+
+> Eine vollständige Sales-Simulation-Plattform mit KI-gestützten Voice Agents und Echtzeit-Analytics, entwickelt mit React, Fastify und OpenAI's Realtime API.
+
+## Über das Projekt
+
+Dieses Repository enthält die Referenzimplementierung für eine moderne Sales-Simulation-Plattform. Das System ermöglicht realistische Verkaufsgespräche mit KI-Agenten, erfasst detaillierte Metriken und visualisiert Performance-Daten in Echtzeit.
+
+### Kernfeatures
+
+- **🎤 Voice-First Interface**: Natürliche Sprachinteraktion mit OpenAI's Realtime API
+- **📊 Analytics Dashboard**: Echtzeit-Visualisierung von Gesprächsmetriken und Performance
+- **🔐 Sichere Authentifizierung**: JWT-basierte Admin-Authentifizierung mit bcrypt
+- **🐳 Container-Ready**: Vollständig containerisiert mit Docker Compose
+- **🧪 Hochqualität**: 80%+ Testabdeckung mit Vitest und Playwright
+- **📈 Production-Ready**: Monitoring mit Prometheus, Grafana und Alertmanager
+
+### Tech Stack
+
+| Bereich | Technologien |
+| --- | --- |
+| **Frontend** | React 18, TypeScript, Vite, WebRTC, Recharts |
+| **Backend** | Fastify, Node.js 20, Prisma ORM, JWT |
+| **Datenbank** | PostgreSQL 16, Redis |
+| **KI** | OpenAI Realtime API, GPT-4o |
+| **DevOps** | Docker, GitHub Actions, GHCR |
+| **Monitoring** | Prometheus, Grafana, Alertmanager |
+
+---
 
 ## Codex Development Setup – Schneller Start
 
@@ -123,6 +155,100 @@ Mit [`scripts/setup-proxy.sh`](./scripts/setup-proxy.sh) kannst du den Nginx Pro
 
 Das Skript liest automatisch `.env`, authentifiziert sich via `NPM_TOKEN` oder `NPM_EMAIL`/`NPM_PASSWORD` und erzeugt bzw. aktualisiert den entsprechenden Proxy Host. Über Variablen wie `NPM_CERTIFICATE_ID` und `NPM_FORCE_SSL` kannst du SSL-Erzwingung oder bestehende Zertifikate steuern.
 
+## CI/CD & Container Registry
+
+### Warum Docker Images?
+
+Das Projekt baut automatisch Docker Images für Backend und Frontend bei jedem Push auf `main`. Diese Images werden im GitHub Container Registry (GHCR) gespeichert und ermöglichen:
+
+1. **Reproduzierbare Deployments**: Jedes Image ist mit einem Git-SHA getaggt und enthält exakt den gleichen Code
+2. **Schnelle Rollbacks**: Bei Problemen kann sofort auf ein älteres Image zurückgegriffen werden
+3. **Einfaches Deployment**: Pull & Run auf jedem Server mit Docker
+4. **Versionierung**: Images sind unter `ghcr.io/marcantonioschulz/web-app-agents-sdk-backend:main` und `ghcr.io/marcantonioschulz/web-app-agents-sdk-frontend:main` verfügbar
+
+### CI/CD Pipeline
+
+Die GitHub Actions Workflow führt bei jedem Push/PR folgende Schritte aus:
+
+```
+┌─────────┐    ┌───────┐    ┌──────┐    ┌────────────┐    ┌────────┐
+│  Lint   │───▶│ Build │───▶│ Test │───▶│   Docker   │───▶│ Deploy │
+│ ESLint  │    │  TS   │    │Vitest│    │Build+Push  │    │  SSH   │
+└─────────┘    └───────┘    └──────┘    └────────────┘    └────────┘
+```
+
+**Jobs:**
+- **Lint**: Code-Qualität mit ESLint
+- **Build**: TypeScript Kompilierung für Backend & Frontend
+- **Test**: Unit & Integration Tests (80% Coverage-Threshold)
+- **Docker**: Baut & pusht Images zu GHCR (nur auf `main`)
+- **Deploy**: SSH-basiertes Deployment auf Server (optional, wenn Secrets konfiguriert)
+
+### Deployment verwenden
+
+```bash
+# Images pullen
+docker pull ghcr.io/marcantonioschulz/web-app-agents-sdk-backend:main
+docker pull ghcr.io/marcantonioschulz/web-app-agents-sdk-frontend:main
+
+# Mit docker-compose
+docker compose pull
+docker compose up -d
+```
+
 ## Monitoring & Observability
 
 Die Datei [`docker-compose.yml`](./docker-compose.yml) enthält jetzt optional aktivierbare Services für Prometheus, Alertmanager, Grafana und node-exporter. Alle Konfigurationsdateien sowie vorprovisionierte Dashboards liegen im Ordner [`monitoring/`](./monitoring). Eine ausführliche Anleitung inklusive Alert-Routing nach Slack/Discord findest du in [`docs/monitoring.md`](./docs/monitoring.md).
+
+## Contributing
+
+Wir freuen uns über Beiträge zur Verbesserung des Projekts! Bevor du startest:
+
+1. **Lies die [Contributing Guidelines](CONTRIBUTING.md)** für detaillierte Informationen zum Entwicklungsprozess
+2. **Beachte den [Code of Conduct](CODE_OF_CONDUCT.md)** - wir pflegen eine freundliche und inklusive Community
+3. **Prüfe [offene Issues](https://github.com/marcantonioschulz/Web-App-Agents-SDK/issues)** oder erstelle ein neues Issue für deine Idee
+4. **Sicherheitslücken?** Bitte folge unserer [Security Policy](SECURITY.md)
+
+### Schnellstart für Contributors
+
+```bash
+# Repository forken und klonen
+git clone https://github.com/YOUR_USERNAME/Web-App-Agents-SDK.git
+cd Web-App-Agents-SDK
+
+# Dependencies installieren
+make codex-setup
+
+# Branch erstellen
+git checkout -b feature/deine-feature-name
+
+# Entwicklungsumgebung starten
+docker compose up -d
+
+# Tests ausführen
+cd backend && npm test
+cd frontend && npm test
+```
+
+Weitere Details findest du in [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+Dieses Projekt steht unter der MIT License - siehe [LICENSE](LICENSE) für Details.
+
+## Support & Community
+
+- 💬 **Diskussionen**: [GitHub Discussions](https://github.com/marcantonioschulz/Web-App-Agents-SDK/discussions)
+- 🐛 **Bug Reports**: [Issue Tracker](https://github.com/marcantonioschulz/Web-App-Agents-SDK/issues)
+- 📖 **Dokumentation**: [GitHub Wiki](https://github.com/marcantonioschulz/Web-App-Agents-SDK/wiki)
+- 🔒 **Security**: [Security Policy](SECURITY.md)
+
+## Acknowledgments
+
+Entwickelt mit ❤️ von [Marc Antonio Schulz](https://github.com/marcantonioschulz)
+
+Powered by:
+- [OpenAI Realtime API](https://platform.openai.com/docs/guides/realtime)
+- [Fastify](https://www.fastify.io/)
+- [React](https://react.dev/)
+- [Prisma](https://www.prisma.io/)
