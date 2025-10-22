@@ -4,7 +4,8 @@ import type { AdminUser } from '@prisma/client';
 vi.hoisted(() => {
   process.env.OPENAI_API_KEY = 'test-openai';
   process.env.DATABASE_URL = 'postgresql://user:pass@localhost:5432/test';
-  process.env.JWT_SECRET = 'unit-secret';
+  process.env.API_KEY = 'test-api-key-1234567890';
+  process.env.JWT_SECRET = 'test-jwt-secret-12345678901234567890';
 });
 
 const { findUniqueMock } = vi.hoisted(() => {

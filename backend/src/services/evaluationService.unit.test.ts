@@ -8,7 +8,8 @@ vi.hoisted(() => {
   process.env.DATABASE_URL = 'postgresql://user:pass@localhost:5432/db';
   process.env.REALTIME_MODEL = 'test-realtime';
   process.env.RESPONSES_MODEL = 'test-model';
-  process.env.JWT_SECRET = 'test-secret';
+  process.env.API_KEY = 'test-api-key-1234567890';
+  process.env.JWT_SECRET = 'test-jwt-secret-12345678901234567890';
 });
 import { parseScorePayload, scoreTranscriptForUser } from './evaluationService.js';
 import { openAIClient } from './openaiClient.js';

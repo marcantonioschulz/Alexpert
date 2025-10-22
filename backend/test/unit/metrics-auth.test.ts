@@ -6,10 +6,10 @@ describe('metrics endpoint authentication', () => {
   let app: FastifyInstance;
 
   beforeAll(async () => {
-    vi.stubEnv('API_KEY', 'test-api-key');
+    vi.stubEnv('API_KEY', 'test-api-key-1234567890');
     vi.stubEnv('OPENAI_API_KEY', 'test-openai-key');
     vi.stubEnv('DATABASE_URL', 'postgres://user:pass@localhost:5432/test');
-    vi.stubEnv('JWT_SECRET', 'test-jwt-secret');
+    vi.stubEnv('JWT_SECRET', 'test-jwt-secret-12345678901234567890');
     vi.stubEnv('REALTIME_MODEL', 'test-realtime');
     vi.stubEnv('RESPONSES_MODEL', 'test-responses');
 
@@ -29,7 +29,7 @@ describe('metrics endpoint authentication', () => {
   it('allows access with a valid admin token', async () => {
     const response = await supertest(app.server)
       .get('/metrics')
-      .set('x-api-key', 'test-api-key')
+      .set('x-api-key', 'test-api-key-1234567890')
       .expect(200);
 
     expect(response.text).toBeTypeOf('string');

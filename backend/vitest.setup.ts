@@ -6,8 +6,8 @@ process.env.APP_ENV = 'dev';
 process.env.PORT = '4000';
 
 // Required security credentials (strong enough for validation)
-process.env.API_KEY = 'test-api-key-1234567890';
-process.env.JWT_SECRET = 'test-jwt-secret-12345678901234567890123456789012';
+process.env.API_KEY = 'test-api-key-12345678901234567890abcdefghijklmnopqrstuvwxyz';
+process.env.JWT_SECRET = 'test-jwt-secret-12345678901234567890abcdefghijklmnopqrstuvwxyz1234567890';
 
 // Required OpenAI credentials (dummy for tests)
 process.env.OPENAI_API_KEY = 'sk-test-key';
