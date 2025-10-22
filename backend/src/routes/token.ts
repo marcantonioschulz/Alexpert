@@ -31,6 +31,12 @@ export async function tokenRoutes(app: FastifyInstance) {
           }),
           500: errorResponseSchema
         }
+      },
+      config: {
+        rateLimit: {
+          max: 20, // 20 token requests
+          timeWindow: '1 minute' // per minute (protects OpenAI credits)
+        }
       }
     },
     async (request, reply) => {

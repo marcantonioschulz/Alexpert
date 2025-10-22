@@ -17,6 +17,12 @@ export async function authRoutes(app: FastifyInstance) {
           200: z.object({ token: z.string() }),
           401: errorResponseSchema satisfies z.ZodType<ErrorResponse>
         }
+      },
+      config: {
+        rateLimit: {
+          max: 5, // Only 5 login attempts
+          timeWindow: '15 minutes' // per 15 minutes
+        }
       }
     },
     async (request, reply) => {

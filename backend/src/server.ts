@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import sensible from '@fastify/sensible';
 import cors from '@fastify/cors';
+import rateLimit from '@fastify/rate-limit';
 import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
 import { env } from './lib/env.js';
 import { prisma } from './lib/prisma.js';
@@ -39,6 +40,18 @@ export const buildServer = () => {
   app.register(cors, { origin: originConfig });
   app.register(sensible);
   app.register(metricsPlugin);
+
+  // Rate limiting - protect against abuse and DoS
+  app.register(rateLimit, {
+    global: true,
+    max: 100, // 100 requests
+    timeWindow: '15 minutes',
+    errorResponseBuilder: () => ({
+      code: 'RATE_LIMIT_EXCEEDED',
+      message: 'Too many requests, please try again later.',
+      statusCode: 429
+    })
+  });
 
   app.setErrorHandler((error, request, reply) => {
     const statusCode = error.statusCode ?? 500;

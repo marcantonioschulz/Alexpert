@@ -46,7 +46,7 @@ services:
       - backend
     environment:
       VITE_BACKEND_URL: http://backend:4000
-      VITE_API_KEY: ${API_KEY:-super-secret-key}
+      # No API_KEY in frontend - all auth handled by backend
     ports:
       - '${VITE_PORT:-3000}:3000'
     networks:
