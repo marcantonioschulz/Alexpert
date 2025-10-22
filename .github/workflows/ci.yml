@@ -148,9 +148,9 @@ jobs:
     needs:
       - test
     if: github.ref == 'refs/heads/main'
-    env:
-      REGISTRY_USERNAME: ${{ secrets.GHCR_USERNAME }}
-      REGISTRY_TOKEN: ${{ secrets.GHCR_TOKEN }}
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -159,8 +159,8 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ env.REGISTRY_USERNAME }}
-          password: ${{ env.REGISTRY_TOKEN }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata (tags, labels)
         id: meta
@@ -184,7 +184,7 @@ jobs:
     environment: TEST_ENV
     needs:
       - docker
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && secrets.DEPLOY_HOST != ''
     steps:
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.0.0
@@ -196,8 +196,7 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
             export API_KEY=${{ secrets.API_KEY }}
-            export REGISTRY_TOKEN=${{ secrets.GHCR_TOKEN }}
-            docker login ${{ env.REGISTRY }} -u ${{ secrets.GHCR_USERNAME }} -p $REGISTRY_TOKEN
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
             cd ${{ secrets.DEPLOY_WORKDIR }}
             docker compose pull
             docker compose up -d --remove-orphans
