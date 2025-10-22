@@ -1,6 +1,8 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import fastifyMetrics from 'fastify-metrics';
+import { register } from 'prom-client';
 import { requestDurationHistogram, requestErrorCounter } from '../lib/metrics.js';
+import { env } from '../lib/env.js';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -13,12 +15,30 @@ const getRoute = (request: FastifyRequest) => {
 };
 
 export async function metricsPlugin(app: FastifyInstance) {
-  app.register(fastifyMetrics, {
-    endpoint: '/metrics',
+  // Register metrics plugin without endpoint
+  await app.register(fastifyMetrics, {
+    endpoint: null,
     defaultMetrics: {
       enabled: true,
       prefix: 'sales_simulation_'
     }
+  });
+
+  // Register protected metrics endpoint
+  app.get('/metrics', {
+    preHandler: async (request, reply) => {
+      // If API_KEY is configured, require authentication
+      if (env.API_KEY) {
+        const apiKey = request.headers['x-api-key'];
+        if (!apiKey || apiKey !== env.API_KEY) {
+          reply.code(401).send({ error: 'Unauthorized' });
+          return;
+        }
+      }
+    }
+  }, async (request, reply) => {
+    const metrics = await register.metrics();
+    reply.type(register.contentType).send(metrics);
   });
 
   app.addHook('onRequest', async (request) => {

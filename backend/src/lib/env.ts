@@ -7,6 +7,7 @@ const envSchema = z.object({
   NODE_ENV: z.string().default('development'),
   APP_ENV: z.enum(['dev', 'prod']).default('dev'),
   PORT: z.coerce.number().default(4000),
+  API_KEY: z.string().optional(),
   OPENAI_API_KEY: z.string(),
   REALTIME_MODEL: z.string().default('gpt-4o-realtime-preview'),
   RESPONSES_MODEL: z.string().default('gpt-4o-mini'),
