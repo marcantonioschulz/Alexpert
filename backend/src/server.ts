@@ -102,14 +102,27 @@ export const buildServer = () => {
   app.addHook('onRequest', async (request, reply) => {
     const routePath = request.url.split('?')[0];
 
+    // Skip auth for non-API routes and OPTIONS requests
     if (!routePath.startsWith('/api') || request.method === 'OPTIONS') {
       return;
     }
 
-    if (routePath === '/api/admin/login' && request.method === 'POST') {
+    // Public endpoints that don't require JWT authentication
+    const publicEndpoints = [
+      '/api/admin/login',        // Admin login
+      '/api/token',              // OpenAI token generation
+      '/api/start',              // Start simulation
+      '/api/conversations',      // User conversations
+      '/api/scores',             // User scores
+      '/api/user/preferences'    // User preferences
+    ];
+
+    // Check if route is public or starts with /api/realtime
+    if (publicEndpoints.includes(routePath) || routePath.startsWith('/api/realtime')) {
       return;
     }
 
+    // Protected admin routes require JWT authentication
     const authorization = request.headers.authorization;
     const bearerToken = authorization?.startsWith('Bearer ')
       ? authorization.slice('Bearer '.length).trim()
