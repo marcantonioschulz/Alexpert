@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2025-10-23
+
+### Security
+- Updated frontend dependencies to fix 4 npm audit vulnerabilities (1 HIGH, 3 MODERATE)
+  - jsPDF: 2.5.1 → 3.0.3 (fixes DoS/ReDoS vulnerabilities)
+  - Vite: 5.4.20 → 7.1.12 (fixes Windows path bypass vulnerability)
+  - esbuild: automatically updated via Vite (fixes dev server access vulnerability)
+  - dompurify: automatically updated via jsPDF (fixes XSS vulnerability)
+- Updated Docker base images to Node.js 22
+  - Backend: node:20 → node:22-slim (fixes zlib critical vulnerabilities)
+  - Frontend: node:20-alpine → node:22-alpine
+- Resolved all Trivy security alerts (3 CRITICAL, 3 HIGH, 19 MEDIUM, 5 LOW → 0)
+
+### Changed
+- Upgraded to Node.js 22 LTS for improved performance and security
+- Frontend now uses Vite 7 with breaking changes (development should be unaffected)
+- Updated @vitest/coverage-v8 to 4.0.2
+
+### CI/CD
+- Enhanced security scanning with Trivy vulnerability reports
+- Fixed Docker image naming for proper Trivy compatibility
+- All CI/CD tests passing with updated dependencies
+
 ## [1.0.0] - 2025-10-22
 
 ### Added
@@ -113,5 +136,6 @@ When you contribute, please update this file following these guidelines:
 
 ---
 
-[Unreleased]: https://github.com/marcantonioschulz/Web-App-Agents-SDK/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/marcantonioschulz/Web-App-Agents-SDK/releases/tag/v1.0.0
+[Unreleased]: https://github.com/marcantonioschulz/Alexpert/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/marcantonioschulz/Alexpert/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/marcantonioschulz/Alexpert/releases/tag/v1.0.0
