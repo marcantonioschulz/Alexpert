@@ -25,6 +25,7 @@ enum ConversationLogType {
   TRANSCRIPT
   AI_FEEDBACK
   SCORING_CONTEXT
+  ERROR
 }
 
 model ConversationLog {

@@ -101,7 +101,7 @@ export async function realtimeRoutes(app: FastifyInstance) {
               data: {
                 conversationId: request.body.conversationId,
                 role: 'system',
-                type: 'error',
+                type: 'ERROR',
                 content: `Realtime API Error ${response.status}: ${errorDetails || 'Unknown error'}`,
                 context: JSON.stringify({
                   model,
