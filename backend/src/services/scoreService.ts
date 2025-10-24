@@ -67,7 +67,7 @@ export async function scoreConversation(
           role: 'system',
           content: [
             {
-              type: 'text',
+              type: 'input_text',
               text: systemPrompt
             }
           ]
@@ -76,7 +76,7 @@ export async function scoreConversation(
           role: 'user',
           content: [
             {
-              type: 'text',
+              type: 'input_text',
               text: transcript
             }
           ]

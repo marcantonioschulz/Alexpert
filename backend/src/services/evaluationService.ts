@@ -93,7 +93,7 @@ async function requestEvaluation(
           role: 'system',
           content: [
             {
-              type: 'text',
+              type: 'input_text',
               text: scoringPrompt
             }
           ]
@@ -102,7 +102,7 @@ async function requestEvaluation(
           role: 'user',
           content: [
             {
-              type: 'text',
+              type: 'input_text',
               text: transcript
             }
           ]
