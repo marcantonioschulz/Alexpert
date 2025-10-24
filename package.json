@@ -1,6 +1,6 @@
 {
   "name": "alexpert",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "description": "Alexpert - AI-powered sales training platform with intelligent voice agents and real-time analytics",
   "private": true,
   "type": "module",
