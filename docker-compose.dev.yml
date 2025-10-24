@@ -1,0 +1,39 @@
+# Docker Compose override for local development
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+# Or create a symlink: ln -s docker-compose.dev.yml docker-compose.override.yml
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: alexpert-backend:dev
+    # Override restart policy for development
+    restart: "no"
+    # Expose port for debugging
+    ports:
+      - "4000:4000"
+    # Mount source code for hot reload (if using nodemon/tsx watch)
+    volumes:
+      - ./backend/src:/app/src:ro
+      - ./backend/prisma:/app/prisma:ro
+    # Override command for development
+    command: sh -c "npx prisma migrate deploy && npm run dev"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development
+    image: alexpert-frontend:dev
+    # Override restart policy for development
+    restart: "no"
+    # Mount source code for hot reload
+    volumes:
+      - ./frontend/src:/app/src:ro
+      - ./frontend/public:/app/public:ro
+    # Development server with HMR
+    environment:
+      - VITE_BACKEND_URL=http://localhost:4000
+      - VITE_ALLOWED_HOSTS=localhost,127.0.0.1
+    command: npm run dev -- --host

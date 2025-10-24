@@ -14,9 +14,9 @@ services:
       - app-network
 
   backend:
-    build:
-      context: ./backend
+    image: ghcr.io/marcantonioschulz/web-app-agents-sdk-backend:main
     container_name: backend
+    restart: unless-stopped
     depends_on:
       - db
     environment:
@@ -38,12 +38,14 @@ services:
     networks:
       - app-network
       - frontend
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+      - "io.portainer.accesscontrol.teams=administrators"
 
   frontend:
-    build:
-      context: ./frontend
-      target: production
+    image: ghcr.io/marcantonioschulz/web-app-agents-sdk-frontend:main
     container_name: frontend
+    restart: unless-stopped
     depends_on:
       - backend
     environment:
@@ -55,6 +57,9 @@ services:
     networks:
       - app-network
       - frontend
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+      - "io.portainer.accesscontrol.teams=administrators"
 
 volumes:
   postgres_data:
