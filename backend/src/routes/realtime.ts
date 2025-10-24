@@ -73,8 +73,68 @@ export async function realtimeRoutes(app: FastifyInstance) {
 
         if (!response.ok) {
           const errorText = await response.text();
-          request.log.error({ err: errorText, route: 'realtime:session', status: response.status });
-          return sendErrorResponse(reply, 500, 'realtime.session_failed', 'Realtime negotiation failed');
+
+          // Parse OpenAI error if possible
+          let errorDetails = errorText;
+          try {
+            const errorJson = JSON.parse(errorText);
+            errorDetails = errorJson.error?.message || errorText;
+          } catch {
+            // errorText is not JSON, use as is
+          }
+
+          // Log with comprehensive context for debugging
+          request.log.error({
+            err: errorDetails,
+            route: 'realtime:session',
+            status: response.status,
+            conversationId: request.body.conversationId,
+            model,
+            // Only log first 10 characters of API key for security
+            apiKeyPrefix: bearerToken.substring(0, 10),
+            userId
+          });
+
+          // Log error to database for debugging
+          try {
+            await prisma.conversationLog.create({
+              data: {
+                conversationId: request.body.conversationId,
+                role: 'system',
+                type: 'error',
+                content: `Realtime API Error ${response.status}: ${errorDetails || 'Unknown error'}`,
+                context: JSON.stringify({
+                  model,
+                  userId,
+                  hasCustomKey: !!preferences?.apiKeyOverride,
+                  statusCode: response.status
+                })
+              }
+            });
+          } catch (logError) {
+            request.log.warn({ err: logError }, 'Failed to log conversation error to database');
+          }
+
+          // Return user-friendly error messages based on status code
+          let userMessage = 'Verbindung zur OpenAI Realtime API fehlgeschlagen.';
+          let errorCode = 'realtime.session_failed';
+
+          if (response.status === 401) {
+            userMessage =
+              'Ungültiger API-Schlüssel. Bitte überprüfe deine Einstellungen.';
+            errorCode = 'realtime.invalid_api_key';
+          } else if (response.status === 403) {
+            userMessage =
+              'Dein API-Schlüssel hat keinen Zugriff auf die Realtime API. ' +
+              'Bitte überprüfe deine OpenAI-Berechtigungen oder verwende den System-API-Schlüssel.';
+            errorCode = 'realtime.no_realtime_access';
+          } else if (response.status === 429) {
+            userMessage =
+              'Zu viele Anfragen. Bitte warte einen Moment und versuche es erneut.';
+            errorCode = 'realtime.rate_limit';
+          }
+
+          return sendErrorResponse(reply, 500, errorCode, userMessage);
         }
 
         const answer = await response.text();

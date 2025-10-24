@@ -281,7 +281,38 @@ export const useSimulation = (options: SimulationOptions | null) => {
       });
 
       if (!sdpResponse.ok) {
-        throw new Error('Konnte keine Antwort vom Realtime-Service erhalten.');
+        // Try to extract detailed error message from backend
+        try {
+          const errorData = await sdpResponse.json();
+
+          // Check for specific error codes from backend
+          if (errorData.code === 'realtime.invalid_api_key') {
+            throw new Error(
+              '🔑 Ungültiger API-Schlüssel. Bitte überprüfe deine Einstellungen.\n\n' +
+              'Gehe zu den Einstellungen, um deinen API-Schlüssel zu überprüfen oder zu entfernen.'
+            );
+          } else if (errorData.code === 'realtime.no_realtime_access') {
+            throw new Error(
+              '🔑 Dein API-Schlüssel hat keinen Zugriff auf die Realtime API.\n\n' +
+              'Bitte überprüfe deine OpenAI-Berechtigungen unter platform.openai.com ' +
+              'oder verwende den System-API-Schlüssel (entferne deinen eigenen Key in den Einstellungen).'
+            );
+          } else if (errorData.code === 'realtime.rate_limit') {
+            throw new Error(
+              '⏱️ Zu viele Anfragen. Bitte warte einen Moment und versuche es erneut.'
+            );
+          } else if (errorData.message) {
+            throw new Error(errorData.message);
+          }
+        } catch (parseError) {
+          // If error response is not JSON or parsing failed, use specific error if available
+          if (parseError instanceof Error && parseError.message.includes('🔑')) {
+            // Re-throw our custom errors
+            throw parseError;
+          }
+        }
+
+        throw new Error('Konnte keine Verbindung zur KI herstellen. Bitte versuche es erneut.');
       }
 
       const { sdp: remoteSdp } = (await sdpResponse.json()) as { sdp: string };

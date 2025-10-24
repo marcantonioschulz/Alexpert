@@ -124,7 +124,16 @@ export function Settings({
               value={preferences.apiKeyOverride ?? ''}
               onChange={(event) => onChange({ apiKeyOverride: event.target.value })}
             />
-            <p className={styles.helper}>Wird nur für deine Sessions genutzt und sicher gespeichert.</p>
+            <p className={styles.helper}>
+              Wird nur für deine Sessions genutzt und sicher gespeichert.
+              <br />
+              <strong>Wichtig:</strong> Dein API-Schlüssel muss Zugriff auf die OpenAI Realtime API haben.
+              Überprüfe deine Berechtigungen unter{' '}
+              <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer">
+                platform.openai.com
+              </a>
+              .
+            </p>
           </div>
         </div>
 

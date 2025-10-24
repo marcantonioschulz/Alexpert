@@ -37,6 +37,7 @@ services:
     command: sh -c "npx prisma migrate deploy && node dist/server.js"
     networks:
       - app-network
+      - frontend
 
   frontend:
     build:
@@ -47,11 +48,13 @@ services:
       - backend
     environment:
       VITE_BACKEND_URL: http://backend:4000
+      VITE_ALLOWED_HOSTS: ${VITE_ALLOWED_HOSTS:-localhost,.cloud-schulz.de,sales.cloud-schulz.de}
       # No API_KEY in frontend - all auth handled by backend
     ports:
       - '${VITE_PORT:-3000}:3000'
     networks:
       - app-network
+      - frontend
 
 volumes:
   postgres_data:
@@ -59,3 +62,5 @@ volumes:
 networks:
   app-network:
     driver: bridge
+  frontend:
+    external: true

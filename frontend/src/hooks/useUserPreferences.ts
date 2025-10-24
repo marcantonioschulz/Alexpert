@@ -110,6 +110,29 @@ export const useUserPreferences = (userId: string) => {
       });
 
       if (!response.ok) {
+        // Try to extract detailed error message from backend
+        try {
+          const errorData = await response.json();
+
+          // Check for specific error codes from backend
+          if (errorData.code === 'PREFERENCES_INVALID_API_KEY') {
+            throw new Error('❌ Ungültiger API-Schlüssel. Bitte überprüfe den Schlüssel und versuche es erneut.');
+          } else if (errorData.code === 'PREFERENCES_NO_REALTIME_ACCESS') {
+            throw new Error(
+              '❌ Dieser API-Schlüssel hat keinen Zugriff auf die OpenAI Realtime API.\n\n' +
+              'Bitte überprüfe deine Berechtigungen unter platform.openai.com oder verwende den System-API-Schlüssel.'
+            );
+          } else if (errorData.message) {
+            throw new Error(errorData.message);
+          }
+        } catch (parseError) {
+          // If error response is not JSON or parsing failed, use generic message
+          if (parseError instanceof Error && parseError.message.includes('❌')) {
+            // Re-throw our custom errors
+            throw parseError;
+          }
+        }
+
         throw new Error('Einstellungen konnten nicht gespeichert werden.');
       }
 
