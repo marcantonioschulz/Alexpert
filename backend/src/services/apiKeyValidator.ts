@@ -61,8 +61,7 @@ export async function validateOpenAIKey(
 
     if (response.ok) {
       // Key is valid and has Realtime access
-      // Note: We immediately close the session since this is just a validation
-      const data = await response.json();
+      // Note: We don't need to parse the response data for validation
       return {
         valid: true,
         hasRealtimeAccess: true
