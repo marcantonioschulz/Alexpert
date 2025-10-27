@@ -231,3 +231,22 @@ ALTER TABLE "ConversationLog" ADD CONSTRAINT "ConversationLog_conversationId_fke
 
 -- AddForeignKey
 ALTER TABLE "UserPreference" ADD CONSTRAINT "UserPreference_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- ============================================
+-- INSERT DEMO DATA FOR BACKWARD COMPATIBILITY
+-- ============================================
+
+-- Insert demo user (for backward compatibility with tests and legacy endpoints)
+INSERT INTO "User" ("id", "clerkUserId", "email", "name", "emailVerified", "createdAt", "updatedAt")
+VALUES ('demo-user', 'demo_clerk_user', 'demo@example.com', 'Demo User', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON CONFLICT ("id") DO NOTHING;
+
+-- Insert demo organization (for backward compatibility with tests and legacy endpoints)
+INSERT INTO "Organization" ("id", "clerkOrgId", "name", "slug", "plan", "monthlyQuota", "currentUsage", "resetDate", "ownerId", "createdAt", "updatedAt")
+VALUES ('demo-org', 'demo_clerk_org', 'Demo Organization', 'demo-org', 'FREE', 1000, 0, CURRENT_TIMESTAMP + INTERVAL '1 month', 'demo-user', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON CONFLICT ("id") DO NOTHING;
+
+-- Insert demo organization membership
+INSERT INTO "OrganizationMember" ("id", "userId", "organizationId", "role", "joinedAt")
+VALUES ('demo-member', 'demo-user', 'demo-org', 'OWNER', CURRENT_TIMESTAMP)
+ON CONFLICT ("id") DO NOTHING;
