@@ -1,5 +1,4 @@
 import { prisma } from '../lib/prisma.js';
-import type { Organization } from '@prisma/client';
 
 export interface QuotaStatus {
   current: number;

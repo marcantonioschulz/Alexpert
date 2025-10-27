@@ -86,7 +86,10 @@ export async function scoreRoutes(app: FastifyInstance) {
           throw new ServiceError('BAD_REQUEST', 'Kein Transkript vorhanden');
         }
 
-        const newConversation = await createConversation(prisma, userId);
+        // TODO: This is a legacy endpoint - update to use Clerk auth
+        // For now, use demo organization ID
+        const DEMO_ORG_ID = 'demo-org';
+        const newConversation = await createConversation(prisma, userId, DEMO_ORG_ID);
 
         await persistConversationTranscript(prisma, newConversation.id, transcript);
 

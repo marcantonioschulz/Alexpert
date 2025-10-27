@@ -108,7 +108,7 @@ export function QuotaUsage() {
             quotaStatus.canProceed && (
               <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
                 <p className="text-sm text-yellow-800">
-                  <strong>Low quota:</strong> You're running low on conversations.
+                  <strong>Low quota:</strong> You&apos;re running low on conversations.
                   Consider upgrading your plan.
                 </p>
               </div>

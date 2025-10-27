@@ -133,6 +133,7 @@ export async function scoreConversation(
     : await prisma.conversation.create({
         data: {
           userId: 'demo-user',
+          organizationId: 'demo-org',
           transcript,
           score: boundedScore,
           feedback: parsed.feedback
