@@ -115,7 +115,9 @@ export const buildServer = () => {
     // Public endpoints and patterns that don't require JWT authentication
     const publicEndpoints = [
       '/api/admin/login',        // Admin login (legacy)
-      '/api/webhooks/clerk'      // Clerk webhooks
+      '/api/webhooks/clerk',     // Clerk webhooks
+      '/api/start',              // Conversation start (optional Clerk auth)
+      '/api/conversation'        // Conversation endpoints (optional Clerk auth)
     ];
 
     // Protected endpoints now use Clerk auth via preHandler middlewares
