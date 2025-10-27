@@ -14,48 +14,41 @@ import {
   sendErrorResponse,
   type ErrorResponse
 } from './error-response.js';
-import { verifyClerkAuth } from '../middleware/clerk-auth.js';
-import { resolveOrganization, checkOrganizationQuota } from '../middleware/organization.js';
+import { optionalClerkAuth } from '../middleware/clerk-auth.js';
 import { incrementQuota } from '../services/quota.js';
 
 export async function conversationRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
     '/api/start',
     {
-      preHandler: [verifyClerkAuth, resolveOrganization, checkOrganizationQuota],
+      preHandler: [optionalClerkAuth],
       schema: {
         response: {
           200: z.object({ conversationId: z.string() }),
-          401: errorResponseSchema,
-          403: errorResponseSchema,
-          429: errorResponseSchema,
           500: errorResponseSchema satisfies z.ZodType<ErrorResponse>
         }
       }
     },
     async (request, reply) => {
       try {
-        // User and organization are attached by middlewares
-        if (!request.user || !request.organization) {
-          return sendErrorResponse(reply, 401, 'auth.required', 'Authentication required');
-        }
+        // Use authenticated user/org if available, otherwise use demo values for backward compatibility
+        const userId = request.user?.id || 'demo-user';
+        const organizationId = request.organization?.id || 'demo-org';
 
         // Create conversation with user and organization context
-        const conversation = await createConversation(
-          prisma,
-          request.user.id,
-          request.organization.id
-        );
+        const conversation = await createConversation(prisma, userId, organizationId);
 
-        // Increment quota after successful conversation creation
-        try {
-          await incrementQuota(request.organization.id, 1);
-        } catch (quotaError) {
-          request.log.warn(
-            { err: quotaError, organizationId: request.organization.id },
-            'Failed to increment quota after conversation creation'
-          );
-          // Continue anyway - conversation is already created
+        // Increment quota if authenticated (skip for demo)
+        if (request.organization) {
+          try {
+            await incrementQuota(request.organization.id, 1);
+          } catch (quotaError) {
+            request.log.warn(
+              { err: quotaError, organizationId: request.organization.id },
+              'Failed to increment quota after conversation creation'
+            );
+            // Continue anyway - conversation is already created
+          }
         }
 
         return reply.send({ conversationId: conversation.id });
