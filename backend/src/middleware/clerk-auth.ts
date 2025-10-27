@@ -108,6 +108,7 @@ export async function verifyClerkAuth(
  */
 export async function optionalClerkAuth(
   request: FastifyRequest,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _reply: FastifyReply
 ): Promise<void> {
   const authorization = request.headers.authorization;
