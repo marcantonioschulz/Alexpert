@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useUser } from '@clerk/clerk-react';
 import { usePrompts, PromptKey } from '../hooks/usePrompts';
 import { useUserPreferences } from '../hooks/useUserPreferences';
 import { PromptEditor } from '../components/PromptEditor';
@@ -28,7 +29,8 @@ const THEME_OPTIONS: Array<{ value: ThemePreference; label: string }> = [
 
 export function SettingsPage() {
   const [activeTab, setActiveTab] = useState<TabType>('user');
-  const userId = 'demo-user';
+  const { user } = useUser();
+  const userId = user?.id || 'demo-user'; // Fallback to demo-user for backward compatibility
 
   const {
     preferences,

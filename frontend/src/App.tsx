@@ -4,6 +4,7 @@ import { SettingsPage } from './pages/SettingsPage';
 import { SignInPage } from './pages/auth/SignInPage';
 import { SignUpPage } from './pages/auth/SignUpPage';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { Layout } from './components/Layout';
 
 function App() {
   return (
@@ -13,23 +14,17 @@ function App() {
         <Route path="/sign-in" element={<SignInPage />} />
         <Route path="/sign-up" element={<SignUpPage />} />
 
-        {/* Protected routes */}
+        {/* Protected routes with Layout */}
         <Route
-          path="/"
           element={
             <ProtectedRoute>
-              <HomePage />
+              <Layout />
             </ProtectedRoute>
           }
-        />
-        <Route
-          path="/settings"
-          element={
-            <ProtectedRoute>
-              <SettingsPage />
-            </ProtectedRoute>
-          }
-        />
+        >
+          <Route path="/" element={<HomePage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   );

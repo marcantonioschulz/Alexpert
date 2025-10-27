@@ -1,0 +1,138 @@
+.layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-background);
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.headerContent {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: var(--color-text);
+  font-weight: 600;
+  font-size: 1.25rem;
+  transition: color 0.2s ease;
+}
+
+.logo:hover {
+  color: var(--color-primary);
+}
+
+.logoIcon {
+  width: 2rem;
+  height: 2rem;
+  color: var(--color-primary);
+}
+
+.logoText {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.navLink {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  color: var(--color-text-muted);
+  font-weight: 500;
+  font-size: 0.9375rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.navLink:hover {
+  color: var(--color-text);
+  background: var(--color-background);
+}
+
+.navLinkActive {
+  color: var(--color-primary);
+  background: var(--color-primary-light, rgba(99, 102, 241, 0.1));
+}
+
+.navLinkActive:hover {
+  background: var(--color-primary-light, rgba(99, 102, 241, 0.15));
+}
+
+.userMenuWrapper {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+.main {
+  flex: 1;
+  width: 100%;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .headerContent {
+    padding: 0.875rem 1rem;
+    gap: 1rem;
+  }
+
+  .logoText {
+    display: none;
+  }
+
+  .nav {
+    gap: 0.25rem;
+  }
+
+  .navLink {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    padding: 0.5rem;
+    justify-content: space-around;
+    box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.05);
+  }
+
+  .navLink {
+    flex: 1;
+    text-align: center;
+  }
+
+  .main {
+    padding-bottom: 4rem;
+  }
+}

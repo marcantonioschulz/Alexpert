@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { useUser } from '@clerk/clerk-react';
 import { useSimulation } from '../hooks/useSimulation';
 import { useUserPreferences } from '../hooks/useUserPreferences';
 import styles from './HomePage.module.css';
@@ -92,7 +93,8 @@ function SpeakerIndicator({ speakerState }: { speakerState: SpeakerState }) {
 }
 
 export function HomePage() {
-  const userId = 'demo-user';
+  const { user } = useUser();
+  const userId = user?.id || 'demo-user'; // Fallback to demo-user for backward compatibility
   const {
     preferences,
     isLoading: isPreferencesLoading
