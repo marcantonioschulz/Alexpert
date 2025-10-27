@@ -1,6 +1,6 @@
 {
   "name": "alexpert-frontend",
-  "version": "1.3.0",
+  "version": "1.4.1",
   "description": "Alexpert Frontend - React interface for AI-powered sales training with real-time voice interaction",
   "private": true,
   "type": "module",
