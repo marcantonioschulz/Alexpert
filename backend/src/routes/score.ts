@@ -9,11 +9,13 @@ import {
   createConversation,
   persistConversationTranscript
 } from '../services/conversationService.js';
+import { optionalClerkAuth } from '../middleware/clerk-auth.js';
 
 export async function scoreRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
     '/api/score',
     {
+      preHandler: [optionalClerkAuth],
       schema: {
         body: z.object({
           conversationId: z.string().optional(),
@@ -35,7 +37,8 @@ export async function scoreRoutes(app: FastifyInstance) {
     async (request, reply) => {
       try {
         const { conversationId, transcript: transcriptFromBody } = request.body;
-        const userId = request.body.userId ?? 'demo-user';
+        // Use authenticated user ID if available, otherwise fallback to body or demo-user
+        const userId = request.user?.id || request.body.userId || 'demo-user';
 
         if (!conversationId && !transcriptFromBody) {
           throw new ServiceError(

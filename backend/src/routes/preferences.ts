@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { getUserPreferences, saveUserPreferences } from '../lib/preferences.js';
 import { sendErrorResponse } from './error-response.js';
 import { validateOpenAIKey } from '../services/apiKeyValidator.js';
+import { optionalClerkAuth } from '../middleware/clerk-auth.js';
 
 const themeEnum = z.enum(['light', 'dark', 'system']);
 
@@ -25,6 +26,7 @@ export async function preferencesRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().get(
     '/api/user/preferences',
     {
+      preHandler: [optionalClerkAuth],
       schema: {
         querystring: z.object({
           userId: z.string().optional()
@@ -36,8 +38,9 @@ export async function preferencesRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const userId = request.query.userId ?? 'demo-user';
-        request.log.info({ userId }, 'Fetching user preferences');
+        // Use authenticated user ID if available, otherwise fallback to query param or demo-user
+        const userId = request.user?.id || request.query.userId || 'demo-user';
+        request.log.info({ userId, authenticated: !!request.user }, 'Fetching user preferences');
         const preferences = await getUserPreferences(userId);
         return reply.send({
           success: true as const,
@@ -54,9 +57,10 @@ export async function preferencesRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
     '/api/user/preferences',
     {
+      preHandler: [optionalClerkAuth],
       schema: {
         body: z.object({
-          userId: z.string().default('demo-user'),
+          userId: z.string().optional(),
           realtimeModel: z.string(),
           responsesModel: z.string(),
           apiKeyOverride: z.string().nullable(),
@@ -69,7 +73,14 @@ export async function preferencesRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const { userId, ...payload } = request.body;
+        // Use authenticated user ID if available, otherwise fallback to body or demo-user
+        const userId = request.user?.id || request.body.userId || 'demo-user';
+        const payload = {
+          realtimeModel: request.body.realtimeModel,
+          responsesModel: request.body.responsesModel,
+          apiKeyOverride: request.body.apiKeyOverride,
+          theme: request.body.theme
+        };
 
         // Validate API key if provided
         if (payload.apiKeyOverride) {
@@ -107,10 +118,10 @@ export async function preferencesRoutes(app: FastifyInstance) {
             );
           }
 
-          request.log.info({ userId }, 'API key validated successfully');
+          request.log.info({ userId, authenticated: !!request.user }, 'API key validated successfully');
         }
 
-        request.log.info({ userId }, 'Saving user preferences');
+        request.log.info({ userId, authenticated: !!request.user }, 'Saving user preferences');
         const preferences = await saveUserPreferences(userId, payload);
         return reply.send({
           success: true as const,

@@ -10,11 +10,13 @@ import {
 } from '../services/promptService.js';
 import { ServiceError } from '../services/errors.js';
 import { errorResponseSchema, sendErrorResponse } from './error-response.js';
+import { optionalClerkAuth } from '../middleware/clerk-auth.js';
 
 export async function promptRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().get(
     '/api/admin/prompts',
     {
+      preHandler: [optionalClerkAuth],
       schema: {
         response: {
           200: z.object({
@@ -50,6 +52,7 @@ export async function promptRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().put(
     '/api/admin/prompts/:key',
     {
+      preHandler: [optionalClerkAuth],
       schema: {
         params: z.object({
           key: z.nativeEnum(PromptKey)

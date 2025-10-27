@@ -11,11 +11,13 @@ import { realtimeSessionManager } from '../services/realtimeSessionManager.js';
 import { ServiceError } from '../services/errors.js';
 import { persistConversationTranscript } from '../services/conversationService.js';
 import { evaluateAndPersistConversation } from '../services/evaluationService.js';
+import { optionalClerkAuth } from '../middleware/clerk-auth.js';
 
 export async function realtimeRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
     '/api/realtime/session',
     {
+      preHandler: [optionalClerkAuth],
       schema: {
         body: z.object({
           sdp: z.string(),
@@ -33,7 +35,8 @@ export async function realtimeRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const userId = request.body.userId ?? 'demo-user';
+        // Use authenticated user ID if available, otherwise fallback to body or demo-user
+        const userId = request.user?.id || request.body.userId || 'demo-user';
         const preferences = await getUserPreferences(userId);
         const model = request.body.model ?? preferences.realtimeModel ?? env.REALTIME_MODEL;
         const bearerToken = request.body.token ?? resolveOpenAIKey(preferences);
@@ -166,6 +169,7 @@ export async function realtimeRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().get(
     '/api/realtime/:conversationId/events',
     {
+      preHandler: [optionalClerkAuth],
       schema: {
         params: z.object({ conversationId: z.string() }),
         response: {
@@ -208,6 +212,7 @@ export async function realtimeRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
     '/api/realtime/:conversationId/finalize',
     {
+      preHandler: [optionalClerkAuth],
       schema: {
         params: z.object({ conversationId: z.string() }),
         body: z.object({
@@ -237,7 +242,8 @@ export async function realtimeRoutes(app: FastifyInstance) {
         }
 
         const transcriptFromBody = request.body.transcript?.trim() ?? '';
-        const userId = request.body.userId ?? conversation.userId ?? 'demo-user';
+        // Use authenticated user ID if available, otherwise fallback to body, conversation, or demo-user
+        const userId = request.user?.id || request.body.userId || conversation.userId || 'demo-user';
 
         realtimeSessionManager.emit(conversationId, {
           type: 'status',

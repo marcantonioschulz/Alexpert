@@ -7,6 +7,7 @@ import {
   getScoreTrends
 } from '../services/analyticsService.js';
 import { sendErrorResponse } from './error-response.js';
+import { optionalClerkAuth } from '../middleware/clerk-auth.js';
 
 const summaryDataSchema = z.object({
   totalConversations: z.number(),
@@ -62,6 +63,7 @@ export async function analyticsRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().get(
     '/api/analytics/summary',
     {
+      preHandler: [optionalClerkAuth],
       schema: {
         response: {
           200: summaryResponseSchema
@@ -70,7 +72,7 @@ export async function analyticsRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        request.log.info('Fetching analytics summary');
+        request.log.info({ authenticated: !!request.user }, 'Fetching analytics summary');
         const summary = await getAnalyticsSummary();
         return reply.send(buildSuccessResponse(summary));
       } catch (error) {
@@ -83,6 +85,7 @@ export async function analyticsRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().get(
     '/api/analytics/trends',
     {
+      preHandler: [optionalClerkAuth],
       schema: {
         querystring: z
           .object({
@@ -97,7 +100,7 @@ export async function analyticsRoutes(app: FastifyInstance) {
     async (request, reply) => {
       try {
         const days = request.query?.days ?? 14;
-        request.log.info({ days }, 'Fetching analytics trends');
+        request.log.info({ days, authenticated: !!request.user }, 'Fetching analytics trends');
         const trend = await getScoreTrends(days);
         return reply.send(buildSuccessResponse(trend));
       } catch (error) {
@@ -110,6 +113,7 @@ export async function analyticsRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().get(
     '/api/analytics/score-distribution',
     {
+      preHandler: [optionalClerkAuth],
       schema: {
         response: {
           200: distributionResponseSchema
@@ -118,7 +122,7 @@ export async function analyticsRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        request.log.info('Fetching score distribution');
+        request.log.info({ authenticated: !!request.user }, 'Fetching score distribution');
         const distribution = await getScoreDistribution();
         return reply.send(buildSuccessResponse(distribution));
       } catch (error) {

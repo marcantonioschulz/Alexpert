@@ -66,6 +66,7 @@ export async function conversationRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
     '/api/conversation/:id/transcript',
     {
+      preHandler: [optionalClerkAuth],
       schema: {
         params: z.object({
           id: z.string()
@@ -121,6 +122,7 @@ export async function conversationRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().get(
     '/api/conversation/:id/logs',
     {
+      preHandler: [optionalClerkAuth],
       schema: {
         params: z.object({ id: z.string() }),
         querystring: z.object({
@@ -189,6 +191,7 @@ export async function conversationRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().get(
     '/api/conversation/:id',
     {
+      preHandler: [optionalClerkAuth],
       schema: {
         params: z.object({ id: z.string() }),
         response: {
