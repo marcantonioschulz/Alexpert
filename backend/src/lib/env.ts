@@ -19,7 +19,11 @@ const envSchema = z.object({
   OPENAI_BACKOFF_MULTIPLIER: z.coerce.number().optional(),
   CACHE_URL: z.string().url().optional(),
   CACHE_TTL_SECONDS: z.coerce.number().optional(),
-  JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters for security')
+  JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters for security'),
+  // Clerk Authentication
+  CLERK_PUBLISHABLE_KEY: z.string(),
+  CLERK_SECRET_KEY: z.string(),
+  CLERK_WEBHOOK_SECRET: z.string().optional()
 });
 
 const parsed = envSchema.safeParse(process.env);

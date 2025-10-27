@@ -14,27 +14,50 @@ import {
   sendErrorResponse,
   type ErrorResponse
 } from './error-response.js';
+import { verifyClerkAuth } from '../middleware/clerk-auth.js';
+import { resolveOrganization, checkOrganizationQuota } from '../middleware/organization.js';
+import { incrementQuota } from '../services/quota.js';
 
 export async function conversationRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
     '/api/start',
     {
+      preHandler: [verifyClerkAuth, resolveOrganization, checkOrganizationQuota],
       schema: {
-        body: z
-          .object({
-            userId: z.string().optional()
-          })
-          .optional()
-          .nullable(),
         response: {
           200: z.object({ conversationId: z.string() }),
+          401: errorResponseSchema,
+          403: errorResponseSchema,
+          429: errorResponseSchema,
           500: errorResponseSchema satisfies z.ZodType<ErrorResponse>
         }
       }
     },
     async (request, reply) => {
       try {
-        const conversation = await createConversation(prisma, request.body?.userId);
+        // User and organization are attached by middlewares
+        if (!request.user || !request.organization) {
+          return sendErrorResponse(reply, 401, 'auth.required', 'Authentication required');
+        }
+
+        // Create conversation with user and organization context
+        const conversation = await createConversation(
+          prisma,
+          request.user.id,
+          request.organization.id
+        );
+
+        // Increment quota after successful conversation creation
+        try {
+          await incrementQuota(request.organization.id, 1);
+        } catch (quotaError) {
+          request.log.warn(
+            { err: quotaError, organizationId: request.organization.id },
+            'Failed to increment quota after conversation creation'
+          );
+          // Continue anyway - conversation is already created
+        }
+
         return reply.send({ conversationId: conversation.id });
       } catch (err) {
         request.log.error({ err, route: 'conversation:start' });

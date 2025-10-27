@@ -7,25 +7,122 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Conversation {
-  id         String   @id @default(cuid())
-  userId     String   @default("demo-user")
-  transcript String?
-  score      Int?
-  feedback   String?
-  createdAt  DateTime @default(now())
-  logs       ConversationLog[]
+// ============================================
+// USER MANAGEMENT
+// ============================================
 
-  @@index([userId])
-  @@index([createdAt])
-  @@index([userId, createdAt])
+model User {
+  id            String   @id @default(cuid())
+  clerkUserId   String   @unique
+  email         String   @unique
+  name          String?
+  avatar        String?
+
+  emailVerified Boolean  @default(false)
+  lastLoginAt   DateTime?
+
+  // Relationships
+  memberships   OrganizationMember[]
+  ownedOrgs     Organization[]       @relation("OrgOwner")
+  preferences   UserPreference?
+  conversations Conversation[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([clerkUserId])
+  @@index([email])
 }
 
-enum ConversationLogType {
-  TRANSCRIPT
-  AI_FEEDBACK
-  SCORING_CONTEXT
-  ERROR
+// ============================================
+// ORGANIZATION & MULTI-TENANCY
+// ============================================
+
+model Organization {
+  id              String   @id @default(cuid())
+  clerkOrgId      String   @unique
+  name            String
+  slug            String   @unique
+  logo            String?
+
+  // Plan & Limits
+  plan            PlanType @default(FREE)
+  monthlyQuota    Int      @default(50)
+  currentUsage    Int      @default(0)
+  resetDate       DateTime
+
+  // Feature Flags
+  canUseSharedKeys    Boolean @default(false)
+  canUseSSO           Boolean @default(false)
+  canCustomizePrompts Boolean @default(false)
+  maxMembers          Int     @default(1)
+
+  // Shared API Keys (Optional, encrypted)
+  sharedOpenAIKey     String?
+
+  // Owner
+  ownerId         String
+  owner           User     @relation("OrgOwner", fields: [ownerId], references: [id])
+
+  // Relationships
+  members         OrganizationMember[]
+  conversations   Conversation[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([clerkOrgId])
+  @@index([ownerId])
+  @@index([slug])
+}
+
+model OrganizationMember {
+  id          String @id @default(cuid())
+
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  role        OrgRole @default(MEMBER)
+
+  joinedAt    DateTime @default(now())
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+  @@index([userId])
+}
+
+// ============================================
+// CONVERSATIONS
+// ============================================
+
+model Conversation {
+  id              String   @id @default(cuid())
+
+  // Relations
+  user            User     @relation(fields: [userId], references: [id])
+  userId          String
+
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  organizationId  String
+
+  transcript      String?
+  score           Int?
+  feedback        String?
+
+  // Token Tracking
+  inputTokens     Int?
+  outputTokens    Int?
+
+  createdAt       DateTime @default(now())
+  logs            ConversationLog[]
+
+  @@index([userId])
+  @@index([organizationId])
+  @@index([organizationId, createdAt])
+  @@index([createdAt])
 }
 
 model ConversationLog {
@@ -43,16 +140,28 @@ model ConversationLog {
   @@index([conversationId, type])
 }
 
+// ============================================
+// USER PREFERENCES
+// ============================================
+
 model UserPreference {
   id             Int      @id @default(autoincrement())
+
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId         String   @unique
-  realtimeModel  String?  @default("gpt-4o-realtime-preview")
+
+  realtimeModel  String?  @default("gpt-4o-realtime-preview-2024-12-17")
   responsesModel String?  @default("gpt-4o-mini")
   apiKeyOverride String?
   theme          String   @default("system")
+
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
+
+// ============================================
+// PROMPT SETTINGS
+// ============================================
 
 model PromptSetting {
   id          Int      @id @default(autoincrement())
@@ -63,6 +172,10 @@ model PromptSetting {
   updatedAt   DateTime @updatedAt
 }
 
+// ============================================
+// ADMIN PANEL (Separate from Clerk Auth)
+// ============================================
+
 model AdminUser {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -70,4 +183,28 @@ model AdminUser {
   role         String   @default("admin")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum PlanType {
+  FREE
+  PROFESSIONAL
+  BUSINESS
+  ENTERPRISE
+}
+
+enum OrgRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum ConversationLogType {
+  TRANSCRIPT
+  AI_FEEDBACK
+  SCORING_CONTEXT
+  ERROR
 }

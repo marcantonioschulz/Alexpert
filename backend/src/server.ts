@@ -15,6 +15,8 @@ import { preferencesRoutes } from './routes/preferences.js';
 import { promptRoutes } from './routes/prompts.js';
 import { analyticsRoutes } from './routes/analytics.js';
 import { authRoutes } from './routes/auth.js';
+import { clerkWebhooksRoutes } from './routes/clerk-webhooks.js';
+import { organizationRoutes } from './routes/organizations.js';
 import { verifyAdminToken } from './services/authService.js';
 import type { ErrorResponse } from './routes/error-response.js';
 
@@ -25,6 +27,9 @@ export const buildServer = () => {
 
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
+
+  // Register Prisma on Fastify instance for access in middlewares
+  app.decorate('prisma', prisma);
 
   const configuredOrigins = env.CORS_ORIGIN
     ? env.CORS_ORIGIN.split(',').map((origin) => origin.trim()).filter(Boolean)
@@ -109,14 +114,12 @@ export const buildServer = () => {
 
     // Public endpoints and patterns that don't require JWT authentication
     const publicEndpoints = [
-      '/api/admin/login',        // Admin login
-      '/api/token',              // OpenAI token generation
-      '/api/start',              // Start simulation
-      '/api/conversations',      // List conversations
-      '/api/conversation',       // Conversation operations (with path params)
-      '/api/scores',             // User scores
-      '/api/user/preferences'    // User preferences
+      '/api/admin/login',        // Admin login (legacy)
+      '/api/webhooks/clerk'      // Clerk webhooks
     ];
+
+    // Protected endpoints now use Clerk auth via preHandler middlewares
+    // All other /api/* endpoints require authentication
 
     // Check if route is public (exact match or starts with pattern)
     const isPublic = publicEndpoints.some(endpoint =>
@@ -174,6 +177,8 @@ export const buildServer = () => {
   });
 
   app.register(authRoutes);
+  app.register(clerkWebhooksRoutes);
+  app.register(organizationRoutes);
   app.register(conversationRoutes);
   app.register(tokenRoutes);
   app.register(realtimeRoutes);

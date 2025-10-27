@@ -24,11 +24,13 @@ function formatConversation(conversation: ConversationResponse): ConversationDto
 
 export async function createConversation(
   prisma: PrismaClient,
-  userId: string = 'demo-user'
+  userId: string,
+  organizationId: string
 ): Promise<ConversationDto> {
   const conversation = await prisma.conversation.create({
     data: {
-      userId
+      userId,
+      organizationId
     }
   });
 
