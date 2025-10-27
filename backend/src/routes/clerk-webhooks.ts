@@ -1,6 +1,4 @@
 import type { FastifyInstance } from 'fastify';
-import type { ZodTypeProvider } from 'fastify-type-provider-zod';
-import { z } from 'zod';
 import { Webhook } from 'svix';
 import { env } from '../lib/env.js';
 import {
