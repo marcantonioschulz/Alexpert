@@ -83,73 +83,89 @@ export async function fetchDailyTrends(days: number): Promise<AnalyticsDailyTren
   const startDate = new Date(today.getTime());
   startDate.setDate(startDate.getDate() - (boundedDays - 1));
 
-  const conversations = (await prisma.conversation.findMany({
-    where: {
-      createdAt: {
-        gte: startDate
+  // Use SQL GROUP BY for efficient aggregation at database level
+  const aggregatedData = await prisma.$queryRaw<
+    Array<{
+      date: Date;
+      conversations: bigint;
+      averageScore: number | null;
+    }>
+  >`
+    SELECT
+      DATE_TRUNC('day', "createdAt")::date as date,
+      COUNT(*)::bigint as conversations,
+      AVG(score) as "averageScore"
+    FROM "Conversation"
+    WHERE "createdAt" >= ${startDate}
+    GROUP BY DATE_TRUNC('day', "createdAt")
+    ORDER BY date ASC
+  `;
+
+  // Create a map of dates that have data
+  const dataMap = new Map(
+    aggregatedData.map((row) => [
+      row.date.toISOString().slice(0, 10),
+      {
+        date: row.date.toISOString().slice(0, 10),
+        conversations: Number(row.conversations),
+        averageScore: row.averageScore !== null ? Number(row.averageScore.toFixed(2)) : null
       }
-    },
-    orderBy: { createdAt: 'asc' },
-    select: {
-      createdAt: true,
-      score: true
-    }
-  })) as Array<{ createdAt: Date; score: number | null }>;
+    ])
+  );
 
-  const dayMap = new Map<string, { date: string; conversations: number; scoreSum: number; scoredCount: number }>();
-
+  // Fill in missing days with zero values
+  const result: AnalyticsDailyTrend[] = [];
   for (let i = 0; i < boundedDays; i += 1) {
     const day = new Date(startDate.getTime());
     day.setDate(startDate.getDate() + i);
     const key = day.toISOString().slice(0, 10);
-    dayMap.set(key, {
-      date: key,
-      conversations: 0,
-      scoreSum: 0,
-      scoredCount: 0
-    });
+
+    result.push(
+      dataMap.get(key) || {
+        date: key,
+        conversations: 0,
+        averageScore: null
+      }
+    );
   }
 
-  conversations.forEach((conversation) => {
-    const key = conversation.createdAt.toISOString().slice(0, 10);
-    const bucket = dayMap.get(key);
-
-    if (!bucket) {
-      return;
-    }
-
-    bucket.conversations += 1;
-
-    if (conversation.score !== null && conversation.score !== undefined) {
-      bucket.scoreSum += conversation.score;
-      bucket.scoredCount += 1;
-    }
-  });
-
-  return Array.from(dayMap.values()).map(({ scoreSum, scoredCount, ...rest }) => ({
-    ...rest,
-    averageScore: scoredCount > 0 ? Number((scoreSum / scoredCount).toFixed(2)) : null
-  }));
+  return result;
 }
 
 export async function fetchScoreDistribution(): Promise<ScoreDistributionBucket[]> {
-  const scoredConversations = (await prisma.conversation.findMany({
-    where: { score: { not: null } },
-    select: { score: true }
-  })) as Array<{ score: number | null }>;
+  // Use SQL CASE WHEN for efficient bucketing at database level
+  const bucketCounts = await prisma.$queryRaw<
+    Array<{
+      bucket: string;
+      count: bigint;
+    }>
+  >`
+    SELECT
+      CASE
+        WHEN score >= 0 AND score <= 20 THEN '0-20'
+        WHEN score >= 21 AND score <= 40 THEN '21-40'
+        WHEN score >= 41 AND score <= 60 THEN '41-60'
+        WHEN score >= 61 AND score <= 80 THEN '61-80'
+        WHEN score >= 81 AND score <= 100 THEN '81-100'
+        ELSE 'unknown'
+      END as bucket,
+      COUNT(*)::bigint as count
+    FROM "Conversation"
+    WHERE score IS NOT NULL
+    GROUP BY bucket
+    ORDER BY bucket
+  `;
 
-  const buckets = SCORE_BUCKETS.map((bucket) => ({ ...bucket, count: 0 }));
+  // Create a map of bucket counts
+  const countMap = new Map(
+    bucketCounts
+      .filter((row) => row.bucket !== 'unknown')
+      .map((row) => [row.bucket, Number(row.count)])
+  );
 
-  scoredConversations.forEach(({ score }) => {
-    if (score === null) {
-      return;
-    }
-
-    const bucket = buckets.find((item) => score >= item.min && score <= item.max);
-    if (bucket) {
-      bucket.count += 1;
-    }
-  });
-
-  return buckets.map(({ label, count }) => ({ range: label, count }));
+  // Return all buckets with their counts (0 if not in result)
+  return SCORE_BUCKETS.map(({ label }) => ({
+    range: label,
+    count: countMap.get(label) || 0
+  }));
 }
