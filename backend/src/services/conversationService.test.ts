@@ -16,6 +16,7 @@ describe('conversationService', () => {
     const createMock = vi.fn().mockResolvedValue({
       id: 'conversation-1',
       userId: 'demo-user',
+      organizationId: 'demo-org',
       transcript: null,
       score: null,
       feedback: null,
@@ -28,17 +29,18 @@ describe('conversationService', () => {
       }
     } as unknown as Parameters<typeof createConversation>[0];
 
-    const result = await createConversation(prisma);
+    const result = await createConversation(prisma, 'demo-user', 'demo-org');
 
     expect(result).toEqual({
       id: 'conversation-1',
       userId: 'demo-user',
+      organizationId: 'demo-org',
       transcript: null,
       score: null,
       feedback: null,
       createdAt: '2024-01-01T00:00:00.000Z'
     });
-    expect(createMock).toHaveBeenCalledWith({ data: { userId: 'demo-user' } });
+    expect(createMock).toHaveBeenCalledWith({ data: { userId: 'demo-user', organizationId: 'demo-org' } });
   });
 
   it('updates a transcript', async () => {

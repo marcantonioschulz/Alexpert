@@ -5,6 +5,23 @@ import App from '../App';
 
 const setTranscriptDraftSpy = vi.hoisted(() => vi.fn());
 
+// Mock Clerk authentication
+vi.mock('@clerk/clerk-react', () => ({
+  useAuth: () => ({
+    isLoaded: true,
+    isSignedIn: true,
+    getToken: vi.fn().mockResolvedValue('mock-token')
+  }),
+  useUser: () => ({
+    isLoaded: true,
+    user: { id: 'user-123', emailAddresses: [{ emailAddress: 'test@example.com' }] }
+  }),
+  useOrganization: () => ({
+    isLoaded: true,
+    organization: { id: 'org-123', name: 'Test Org' }
+  })
+}));
+
 vi.mock('../hooks/useSimulation', () => ({
   __esModule: true,
   useSimulation: () => ({

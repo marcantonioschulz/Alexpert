@@ -20,9 +20,9 @@ const envSchema = z.object({
   CACHE_URL: z.string().url().optional(),
   CACHE_TTL_SECONDS: z.coerce.number().optional(),
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters for security'),
-  // Clerk Authentication
-  CLERK_PUBLISHABLE_KEY: z.string(),
-  CLERK_SECRET_KEY: z.string(),
+  // Clerk Authentication (optional with test defaults)
+  CLERK_PUBLISHABLE_KEY: z.string().default('pk_test_mock-clerk-key'),
+  CLERK_SECRET_KEY: z.string().default('sk_test_mock-clerk-secret'),
   CLERK_WEBHOOK_SECRET: z.string().optional()
 });
 
