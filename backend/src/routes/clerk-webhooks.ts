@@ -72,21 +72,9 @@ export async function clerkWebhooksRoutes(app: FastifyInstance) {
    * Clerk Webhook Endpoint
    * Receives events from Clerk and syncs data to database
    */
-  app.withTypeProvider<ZodTypeProvider>().post(
+  app.post(
     '/api/webhooks/clerk',
     {
-      schema: {
-        headers: z.object({
-          'svix-id': z.string(),
-          'svix-timestamp': z.string(),
-          'svix-signature': z.string()
-        }),
-        response: {
-          200: z.object({ received: z.boolean() }),
-          400: z.object({ code: z.string(), message: z.string() }),
-          401: z.object({ code: z.string(), message: z.string() })
-        }
-      },
       config: {
         // Skip rate limiting for webhooks
         rateLimit: false
@@ -122,6 +110,14 @@ export async function clerkWebhooksRoutes(app: FastifyInstance) {
       }
 
       const event = request.body as WebhookEvent;
+
+      // Type guard to ensure event has correct structure
+      if (!event || typeof event !== 'object' || !('type' in event)) {
+        return reply.status(400).send({
+          code: 'WEBHOOK_INVALID_PAYLOAD',
+          message: 'Invalid webhook payload'
+        });
+      }
 
       request.log.info(
         {
@@ -172,7 +168,7 @@ export async function clerkWebhooksRoutes(app: FastifyInstance) {
           case 'organization.created':
           case 'organization.updated': {
             // Get or create the owner user first
-            let ownerUser = await getUserByClerkId(event.data.created_by);
+            const ownerUser = await getUserByClerkId(event.data.created_by);
 
             if (!ownerUser) {
               // If owner doesn't exist, we need to fetch from Clerk
@@ -286,7 +282,7 @@ export async function clerkWebhooksRoutes(app: FastifyInstance) {
           default: {
             request.log.debug(
               {
-                type: event.type
+                type: 'type' in event ? (event as { type: string }).type : 'unknown'
               },
               'Unhandled webhook event type'
             );

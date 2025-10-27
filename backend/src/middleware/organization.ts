@@ -54,7 +54,7 @@ export async function resolveOrganization(
             name: clerkOrg.name,
             slug: clerkOrg.slug || clerkOrg.id,
             imageUrl: clerkOrg.imageUrl || undefined,
-            createdBy: clerkOrg.createdBy
+            createdBy: clerkOrg.createdBy || request.user.id
           },
           request.user.id
         );

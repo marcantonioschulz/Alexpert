@@ -1,10 +1,10 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { ClerkClient } from '@clerk/clerk-sdk-node';
+import { createClerkClient } from '@clerk/clerk-sdk-node';
 import { env } from '../lib/env.js';
 import { syncUser, getUserByClerkId, type ClerkUserData } from '../services/clerkSync.js';
 
 // Initialize Clerk client
-const clerk = new ClerkClient({ secretKey: env.CLERK_SECRET_KEY });
+const clerk = createClerkClient({ secretKey: env.CLERK_SECRET_KEY });
 
 export interface ClerkJWTPayload {
   sub: string; // Clerk user ID
@@ -40,11 +40,11 @@ export async function verifyClerkAuth(
     const token = authorization.slice('Bearer '.length).trim();
 
     // Verify token with Clerk
-    const payload = await clerk.verifyToken(token, {
+    const verifiedToken = await clerk.verifyToken(token, {
       secretKey: env.CLERK_SECRET_KEY
-    }) as ClerkJWTPayload;
+    });
 
-    if (!payload || !payload.sub) {
+    if (!verifiedToken || !verifiedToken.sub) {
       reply.status(401).send({
         code: 'AUTH_INVALID_TOKEN',
         message: 'Invalid session token'
@@ -53,12 +53,12 @@ export async function verifyClerkAuth(
     }
 
     // Get full user data from Clerk
-    const clerkUser = await clerk.users.getUser(payload.sub);
+    const clerkUser = await clerk.users.getUser(verifiedToken.sub);
 
     // Sync user to database
     const userData: ClerkUserData = {
       id: clerkUser.id,
-      email: clerkUser.emailAddresses[0]?.emailAddress || payload.email,
+      email: clerkUser.emailAddresses[0]?.emailAddress || '',
       firstName: clerkUser.firstName || undefined,
       lastName: clerkUser.lastName || undefined,
       imageUrl: clerkUser.imageUrl || undefined,
@@ -67,9 +67,12 @@ export async function verifyClerkAuth(
 
     const user = await syncUser(userData);
 
+    // Extract custom claims from verified token
+    const payload = verifiedToken as unknown as ClerkJWTPayload;
+
     // Attach user and Clerk data to request
     request.user = user;
-    request.clerkUserId = payload.sub;
+    request.clerkUserId = verifiedToken.sub;
     request.clerkOrgId = payload.org_id;
     request.clerkOrgRole = payload.org_role;
 
@@ -104,8 +107,7 @@ export async function verifyClerkAuth(
  * Useful for endpoints that have optional authentication
  */
 export async function optionalClerkAuth(
-  request: FastifyRequest,
-  reply: FastifyReply
+  request: FastifyRequest
 ): Promise<void> {
   const authorization = request.headers.authorization;
 
@@ -116,17 +118,18 @@ export async function optionalClerkAuth(
 
   try {
     const token = authorization.slice('Bearer '.length).trim();
-    const payload = await clerk.verifyToken(token, {
+    const verifiedToken = await clerk.verifyToken(token, {
       secretKey: env.CLERK_SECRET_KEY
-    }) as ClerkJWTPayload;
+    });
 
-    if (payload && payload.sub) {
+    if (verifiedToken && verifiedToken.sub) {
       // Get user from database
-      const user = await getUserByClerkId(payload.sub);
+      const user = await getUserByClerkId(verifiedToken.sub);
 
       if (user) {
+        const payload = verifiedToken as unknown as ClerkJWTPayload;
         request.user = user;
-        request.clerkUserId = payload.sub;
+        request.clerkUserId = verifiedToken.sub;
         request.clerkOrgId = payload.org_id;
         request.clerkOrgRole = payload.org_role;
       }
