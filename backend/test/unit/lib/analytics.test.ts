@@ -33,7 +33,7 @@ describe('Analytics', () => {
     const port = container.getMappedPort(5432);
     const databaseUrl = `postgresql://test:test@localhost:${port}/testdb`;
 
-    prisma = new PrismaClient({ datasource: { db: { url: databaseUrl } } });
+    prisma = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
 
     // Run migrations
     process.env.DATABASE_URL = databaseUrl;
