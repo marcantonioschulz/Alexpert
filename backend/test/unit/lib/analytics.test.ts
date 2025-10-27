@@ -33,11 +33,12 @@ describe('Analytics', () => {
     const port = container.getMappedPort(5432);
     const databaseUrl = `postgresql://test:test@localhost:${port}/testdb`;
 
-    prisma = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
-
-    // Run migrations
+    // Set DATABASE_URL before creating Prisma Client and running migrations
     process.env.DATABASE_URL = databaseUrl;
     await execAsync('npx prisma migrate deploy', { cwd: process.cwd() });
+
+    // Create Prisma Client after migrations
+    prisma = new PrismaClient();
 
     // Seed test data
     const now = new Date();
