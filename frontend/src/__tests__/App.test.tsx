@@ -19,7 +19,9 @@ vi.mock('@clerk/clerk-react', () => ({
   useOrganization: () => ({
     isLoaded: true,
     organization: { id: 'org-123', name: 'Test Org' }
-  })
+  }),
+  UserButton: () => <div data-testid="user-button">User Menu</div>,
+  OrganizationSwitcher: () => <div data-testid="org-switcher">Org Switcher</div>
 }));
 
 vi.mock('../hooks/useSimulation', () => ({
