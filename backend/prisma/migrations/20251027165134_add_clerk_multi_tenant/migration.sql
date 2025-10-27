@@ -250,3 +250,18 @@ ON CONFLICT ("id") DO NOTHING;
 INSERT INTO "OrganizationMember" ("id", "userId", "organizationId", "role", "joinedAt")
 VALUES ('demo-member', 'demo-user', 'demo-org', 'OWNER', CURRENT_TIMESTAMP)
 ON CONFLICT ("id") DO NOTHING;
+
+-- Insert integration test user (for integration tests)
+INSERT INTO "User" ("id", "clerkUserId", "email", "name", "emailVerified", "createdAt", "updatedAt")
+VALUES ('integration-user', 'integration_clerk_user', 'integration@example.com', 'Integration Test User', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON CONFLICT ("id") DO NOTHING;
+
+-- Insert integration test organization
+INSERT INTO "Organization" ("id", "clerkOrgId", "name", "slug", "plan", "monthlyQuota", "currentUsage", "resetDate", "ownerId", "createdAt", "updatedAt")
+VALUES ('integration-org', 'integration_clerk_org', 'Integration Test Organization', 'integration-org', 'FREE', 1000, 0, CURRENT_TIMESTAMP + INTERVAL '1 month', 'integration-user', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON CONFLICT ("id") DO NOTHING;
+
+-- Insert integration test organization membership
+INSERT INTO "OrganizationMember" ("id", "userId", "organizationId", "role", "joinedAt")
+VALUES ('integration-member', 'integration-user', 'integration-org', 'OWNER', CURRENT_TIMESTAMP)
+ON CONFLICT ("id") DO NOTHING;
