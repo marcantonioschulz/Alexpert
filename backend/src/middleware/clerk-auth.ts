@@ -107,7 +107,8 @@ export async function verifyClerkAuth(
  * Useful for endpoints that have optional authentication
  */
 export async function optionalClerkAuth(
-  request: FastifyRequest
+  request: FastifyRequest,
+  reply: FastifyReply
 ): Promise<void> {
   const authorization = request.headers.authorization;
 
