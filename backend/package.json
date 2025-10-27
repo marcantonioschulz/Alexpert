@@ -1,6 +1,6 @@
 {
   "name": "alexpert-backend",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "Alexpert Backend - API for AI-powered sales training with OpenAI Realtime API integration",
   "private": true,
   "type": "module",
